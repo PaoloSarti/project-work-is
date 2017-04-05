@@ -53,19 +53,13 @@ def to4Labels(prevLabel, curLabel):
            '11':1}   #nrem-nrem (not found, but useful at the start)
     return dic[str(prevLabel)+str(curLabel)]
 
-def json_file_cache_name(**kwargs):
-    filename = 'cache'
-    for key,arg in kwargs.items():
-        filename += '_'+key + str(arg)
-    filename += '.json'
-    return filename
-
 def json_file_cached(fn):
     '''
     Returns a function that caches the result in a json file,
     so, if it is called multiple times with the same arguments,
     the first time calculates the result and saves it in a json file.
-    The following times returns the cached result
+    The following times returns the cached result.
+    Can be used as an annotation
     '''
     def cached_fun(*args,**kwargs):
         filename = 'cache'+'_'+fn.__name__
