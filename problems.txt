@@ -1,0 +1,36 @@
+Data
+1) Really high frequency signal. It's hard to reduce the segment length without losing a lot of information. Maybe smoothing and sampling with a lower period? Or Maybe low-pass filter? And resampling?
+2) Really long sequences, and great variability between lengths.
+	First mouse: From 3000 samples (with period 2 ms) to 1368500 samples.
+		Average is ~30918
+		stdev = 64994.
+	Second mouse: from 500 samples to 1254000 samples.
+		Average: 41167
+		stdev: 104343 
+3) Remember to divide the segments randomly... Done
+4) Extremely low accuracy with only a LSTM layer (~47%), mostly due to the format of the data? (I think so)
+
+5 seconds max.
+
+For each sequence: first 10 seconds
+other
+
+50 train
+20 validation
+30 test
+then k-fold 10 split, 4/5 1/5 train validation. test on everything.
+
+Transitions:
+sleep-awake	-> 0
+awake-seep	-> 1
+sleep-rem	-> 2
+rem-awake	-> 3
+
+Graphviz
+
+digraph G {
+  "awake" -> "nrem"
+  "nrem" -> "awake"
+  "nrem" -> "rem"
+  "rem" -> "awake"
+}
