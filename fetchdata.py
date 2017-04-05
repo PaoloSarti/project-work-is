@@ -11,6 +11,9 @@ from collections import deque
 import json
 from os import path
 
+# fix random seed for reproducibility
+numpy.random.seed(7)
+
 def rawdata(filenames, n=-1):
     data = []
     labels = []
@@ -26,7 +29,7 @@ def rawdata(filenames, n=-1):
                     break
     return data, labels
 
-def rawdataIterator(filenames, n=-1):
+def rawdataIterator(filenames, n=-1, delim='\t'):
     """
     Yields couples (eeg, label) from the specified files.
     Optionally, a maximum number of lines can be specified,
@@ -35,7 +38,7 @@ def rawdataIterator(filenames, n=-1):
     i = 0
     for filename in filenames:
         with open(filename) as f:
-            reader = csv.DictReader(f, delimiter='\t')
+            reader = csv.DictReader(f, delimiter=delim)
             for row in reader:
                 eeg = float(row['1 EEG'])
                 hypno = int(float(row['10 Hypnogm']))
@@ -146,11 +149,6 @@ def dataLabelsArrays(dataLabels):
         labels.append(l)
     return data, labels
 
-def dataLabelsArraysShuffled(dataLabels):
-    dataLabelsArray = [dl for dl in dataLabels]
-    random.shuffle(dataLabelsArray)
-    return dataLabelsArrays(dataLabelsArray)
-
 def normalizeSegments(segments, mi=-1, ma=-1):
     nsegs = []
     for seg in segments:
@@ -167,36 +165,6 @@ def maxMinSegments(segments):
         ma = curMax if curMax > ma else ma
         mi = curMin if curMin < mi else mi
     return ma,mi
-
-def holdoutTrainTest(data, labels, perc_train):
-    l = len(data)
-    split_index = l * perc_train
-    trainData = data[:split_index]
-    trainLabels = labels[:split_index]
-    testData = data[split_index:]
-    testLabels = labels[split_index:]
-    #Normalize according to the training set
-    ma, mi = maxMinSegments(trainData)
-    trainData = normalizeSegments(trainData, ma, mi)
-    testData = normalizeSegments(testData, ma, mi)
-    return (trainData, trainLabels),(testData,testLabels)
-
-def partitionTrainValidTest(data, labels, perc_train=1/3, perc_valid=1/3):
-    l = len(data)
-    l1 = int(l*perc_train)
-    l2 = l1 + int(l*perc_valid)
-    trainData = data[:l1]
-    trainLabels = labels[:l1]
-    validateData = data[l1:l2]
-    validateLabels = labels[l1:l2]
-    testData = data[l2:]
-    testLabels = labels[l2:]
-    #Normalize according to the training set
-    ma, mi = maxMinSegments(trainData)
-    trainData = normalizeSegments(trainData, ma, mi)
-    validateData = normalizeSegments(validateData, ma, mi)
-    testData = normalizeSegments(testData, ma, mi)
-    return (trainData,trainLabels), (validateData,validateLabels), (testData, testLabels)
 
 def stratifiedTrainValidTest(data, labels, perc_train=0.5, perc_valid=0.2):
     trainValidData, testData, trainValidLabels, testLabels = train_test_split(data, labels, train_size=perc_train+perc_valid, stratify=labels)
@@ -215,26 +183,36 @@ def stratifiedTrainTest(data,labels,perc_train=0.7):
     trainData, testData, trainLabels, testLabels = train_test_split(data, labels, train_size=perc_train, stratify=labels)
     return (trainData,trainLabels), (testData, testLabels)
 
-def loadSegmentsLabels(filenames, res, n=-1, shuffle=True):
+
+def load_datalabels_arrays(filenames,aggr,n,seconds,sampling_period,transitions,verbose):
     dataLabels = rawdataIterator(filenames, n)
-    if res != 1:
-        dataLabels = reduceResolution(dataLabels, res)
-    segments = segmentIterator(dataLabels)
-    if shuffle:
-        return dataLabelsArraysShuffled(segments)
+    if seconds != -1:
+        segments = segmentIterator(dataLabels, n=int(seconds/sampling_period),aggr=aggr, transitions=transitions, verbose=verbose)
     else:
-        return dataLabelsArrays(segments)
+        segments = segmentIterator(dataLabels, cut_until_change=False, n=-1,aggr=aggr, transitions=transitions, verbose=verbose)
+    return dataLabelsArrays(segments)
 
-def loadTrainTest(filenames, res, n=-1):
-    data, labels = loadSegmentsLabels(filenames, res, n)
-    return holdoutTrainTest(data, labels, 2/3)
+def cachedDatalabels(filenames, aggr=1, n=-1, seconds=5, sampling_period=0.002, validation=False, transitions=False, verbose=True):
+    dumpedfilename = 'cache' + '_a'+str(aggr)+'_n'+str(n)+'_s'+str(seconds)
+    dumpedfilename = dumpedfilename + '_t.json' if transitions else dumpedfilename + '.json'
+    data, labels = [], []
+    if path.isfile(dumpedfilename):
+        with open(dumpedfilename) as df:
+            data, labels = json.load(df)
+    else:
+        dataLabArrays = load_datalabels_arrays(filenames,aggr,n,seconds,sampling_period,transitions,verbose)
+        with open(dumpedfilename, 'w') as df:
+            json.dump(dataLabArrays,df)
+        data, labels = dataLabArrays
+    return data, labels
 
-def loadTrainValidationTest(filenames, res=1, n=-1):
-    data, labels = loadSegmentsLabels(filenames, res, n)
-    return partitionTrainValidTest(data, labels)
-
-def loadStratifiedDataset(filenames, aggr=1, n=-1, seconds=5, sampling_period=0.002, validation=False, transitions=False, verbose=True):
+def loadStratifiedDataset(filenames, aggr=1, n=-1, seconds=5, sampling_period=0.002, validation=False, transitions=False, verbose=True, cache=True):
     #caching the intermediate result
+    if cache:
+        data, labels = cachedDatalabels(filenames,aggr,n,seconds,sampling_period,validation,transitions,verbose)
+    else:
+        data, labels = load_datalabels_arrays(filenames,aggr,n,seconds,sampling_period,transitions,verbose)
+
     dumpedfilename = 'cache' + '_a'+str(aggr)+'_n'+str(n)+'_s'+str(seconds)
     dumpedfilename = dumpedfilename + '_t.json' if transitions else dumpedfilename + '.json'
     data, labels = [], []

@@ -16,21 +16,23 @@ numpy.random.seed(7)
 
 #-------------------------------------Parameters------------------------------------------
 sampling_period = 0.002
-load_validation = False       #If loading a separate dataset or using a split for validation
+load_validation = False       #Load a separate dataset or use a split for validation
 seconds = 5
 nLines = -1
-aggregate = 1
+aggregate = 5
 filenames = ['../SleepEEG/rt 233_180511(1).txt','../SleepEEG/rt 233_180511(2).txt']
 neurons = 125
 transitions = False
 n_features = 1
 verbose = False
 epochs = 1000
+patience = 10
 learning_rate = 0.00001
+cache = False
 
 #----------------------------------Command line options-----------------------------------
 try:
-    opts, args = getopt.getopt(sys.argv[1:], 'f:n:a:s:e:ltvh')
+    opts, args = getopt.getopt(sys.argv[1:], 'f:n:a:s:e:ltvch')
 except getopt.GetoptError as err:
     print(err)
     sys.exit(2)
@@ -51,8 +53,10 @@ for o, a in opts:
         verbose = True
     elif o == '-e':
         epochs = int(a)
+    elif o == '-c':
+        cache = True
     elif o == '-h':
-        print('USAGE: python train_nn.py [-n <nLines>] [-f <filenames>] [-a <aggregate>] [-e <epochs>] [-s <seconds>] [-l] [-t] [-v] [-h]')
+        print('USAGE: python train_nn.py [-n <nLines>] [-f <filenames>] [-a <aggregate>] [-e <epochs>] [-s <seconds>] [-l] [-t] [-v] [-c] [-h]')
         sys.exit()
     else:
         sys.exit(3)
@@ -60,7 +64,7 @@ for o, a in opts:
 n_classes = 3 if not transitions else 4
 length = int(seconds/(sampling_period*aggregate))
 max_length = 2*length if transitions else length
-labels = ['awake','nrem','rem'] if n_classes == 3 else ['nrem-awake','awake-nrem','nrem-rem', 'rem-aawake']
+labels = ['awake','nrem','rem'] if n_classes == 3 else ['nrem-awake','awake-nrem','nrem-rem', 'rem-awake']
 
 print('Parameters:')
 print('\tsampling_period: '+str(sampling_period))
@@ -75,14 +79,15 @@ print('\tn_features (per timestamp): '+ str(n_features))
 print('\tn_classes: '+ str(n_classes))
 print('\tmax_length of the sequence: '+ str(max_length))
 print('\tmax epochs: '+ str(epochs))
+print('\tpatience: '+ str(patience))
 print('\tlearning rate: '+ str(learning_rate))
 print()
 
 #-----------------------------------load the dataset--------------------------------------
 if load_validation:
-    (X_train, y_train), (X_val, y_val), (X_test, y_test) = loadStratifiedDataset(filenames, aggregate, nLines, seconds, sampling_period, load_validation, transitions=transitions, verbose=verbose)
+    (X_train, y_train), (X_val, y_val), (X_test, y_test) = loadStratifiedDataset(filenames, aggregate, nLines, seconds, sampling_period, load_validation, transitions=transitions, verbose=verbose,cache=cache)
 else:
-    (X_train, y_train), (X_test, y_test) = loadStratifiedDataset(filenames, aggr=aggregate, validation=load_validation, seconds=seconds, n=nLines, transitions=transitions, verbose=verbose)
+    (X_train, y_train), (X_test, y_test) = loadStratifiedDataset(filenames, aggr=aggregate, validation=load_validation, seconds=seconds, n=nLines, transitions=transitions, verbose=verbose, cache=cache)
 
 #------------------------------------to categorical----------------------------------------
 y_train_cat = to_categorical(y_train, num_classes=n_classes)
@@ -107,7 +112,7 @@ X_test = reshape(X_test, max_length, n_features)
 
 #---------------------------------------Model---------------------------------------------
 model = Sequential()
-model.add(GRU(neurons, input_shape=(max_length,1))) #for more layers ,return_sequences=True
+model.add(LSTM(neurons, input_shape=(max_length,1))) #for more layers ,return_sequences=True
 #Add layers here
 #model.add(LSTM(neurons))
 model.add(Dense(n_classes, activation='softmax'))
@@ -115,11 +120,11 @@ model.compile(loss='categorical_crossentropy', optimizer=RMSprop(lr=learning_rat
 print(model.summary())
 
 #----------------------------------Fit and Validate---------------------------------------
-def fitValidationSplit(model, X_train, y_train, split=2/7, epochs=1000):
+def fitValidationSplit(model, X_train, y_train, split=2/7, epochs=1000, patience=10):
     return model.fit(X_train, y_train, validation_split=split, verbose=2, epochs=epochs, callbacks=[EarlyStopping(monitor='loss', patience=100)]) #categorical_accuracy
 
 def fitValidate(model, X_train, y_train, X_val, y_val, labels, epochs=1000, patience=100):
-    prev_accuracy = -1
+    #prev_accuracy = -1
     patience_count = 0
     prev_loss = -1
     for i in range(epochs):
@@ -145,6 +150,7 @@ def fitValidate(model, X_train, y_train, X_val, y_val, labels, epochs=1000, pati
             prev_loss = loss
         else:
             patience_count += 1
+            print('Patience count: '+str(patience_count)+'/'+str(patience))
             if patience_count == patience:
                 print('Loss stopped decreasing')
                 break
@@ -157,9 +163,9 @@ def fitValidate(model, X_train, y_train, X_val, y_val, labels, epochs=1000, pati
     return hist
 
 if load_validation:
-    hist = fitValidate(model, X_train, y_train_cat, X_val, y_val, labels, epochs)
+    hist = fitValidate(model, X_train, y_train_cat, X_val, y_val, labels, epochs, patience)
 else:
-    hist = fitValidationSplit(model,X_train, y_train_cat, epochs=epochs)
+    hist = fitValidationSplit(model, X_train, y_train_cat, split=2/7, epochs=epochs, patience=patience)
 
 # use early stopping, or for on the epochs to stop for the best net. Measure on the validation on each epoch.
 # measure accuracy every epoch, max accuracy. Save and load  weights.

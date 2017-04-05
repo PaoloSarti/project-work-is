@@ -87,3 +87,9 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# vs code
+.vscode
+
+# dataset cache data (very large)
+cache_*
