@@ -29,10 +29,10 @@ epochs = 1000
 patience = 10
 learning_rate = 0.00001
 cache = False
-
+ 
 #----------------------------------Command line options-----------------------------------
 try:
-    opts, args = getopt.getopt(sys.argv[1:], 'f:n:a:s:e:ltvch')
+    opts, args = getopt.getopt(sys.argv[1:], 'f:n:a:s:e:p:ltvch')
 except getopt.GetoptError as err:
     print(err)
     sys.exit(2)
@@ -55,8 +55,20 @@ for o, a in opts:
         epochs = int(a)
     elif o == '-c':
         cache = True
+    elif o == '-p':
+        patience = int(a)
     elif o == '-h':
-        print('USAGE: python train_nn.py [-n <nLines>] [-f <filenames>] [-a <aggregate>] [-e <epochs>] [-s <seconds>] [-l] [-t] [-v] [-c] [-h]')
+        print('''USAGE: python train_nn.py [-n <nLines>] [-f <filenames>] [-a <aggregate>] [-e <epochs>] [-s <seconds>] [-p <patience>] [-l] [-t] [-v] [-c] [-h]
+        -n <nLines>: number of lines to fetch from the files. Default: all.
+        -a <aggregate>: number of eeg values to aggregate together, taking the average. Default: 5.
+        -e <epochs>: number of max epochs. Default 1000.
+        -s <seconds>: how many seconds of eeg to consider per segment. Default: 5.
+        -p <patience>: how many epochs without improvement of the minimal loss to tolerate before stopping early. Default: 10.
+        -l: load a separate dataset for validation, otherwise, a split in the training set is used. More information can be given during training in this way.
+        -t: consider s seconds of eeg before the transition. The number of classes takes into account the transitions.
+        -c: cache the loaded segments into a file, for a much faster loading the next time (with the same parameters).
+        -h: show this help and quit.
+        ''')
         sys.exit()
     else:
         sys.exit(3)
@@ -65,6 +77,7 @@ n_classes = 3 if not transitions else 4
 length = int(seconds/(sampling_period*aggregate))
 max_length = 2*length if transitions else length
 labels = ['awake','nrem','rem'] if n_classes == 3 else ['nrem-awake','awake-nrem','nrem-rem', 'rem-awake']
+model_filename = 'weights.h5'
 
 print('Parameters:')
 print('\tsampling_period: '+str(sampling_period))
@@ -121,16 +134,15 @@ print(model.summary())
 
 #----------------------------------Fit and Validate---------------------------------------
 def fitValidationSplit(model, X_train, y_train, split=2/7, epochs=1000, patience=10):
-    return model.fit(X_train, y_train, validation_split=split, verbose=2, epochs=epochs, callbacks=[EarlyStopping(monitor='loss', patience=100)]) #categorical_accuracy
+    model.fit(X_train, y_train, validation_split=split, verbose=2, epochs=epochs, callbacks=[EarlyStopping(monitor='loss', patience=100)]) #categorical_accuracy
 
-def fitValidate(model, X_train, y_train, X_val, y_val, labels, epochs=1000, patience=100):
+def fitValidate(model, X_train, y_train, X_val, y_val, labels,  model_filename, epochs=1000, patience=10):
     #prev_accuracy = -1
     patience_count = 0
     prev_loss = -1
     for i in range(epochs):
         hist = model.fit(X_train, y_train, verbose=2, epochs=1)
         loss = hist.history['loss'][0]
-        print('Loss: ' + str(loss))
         y_pred = model.predict_classes(X_val)
         #accuracy = accuracy_score(y_val, y_pred)
         #print('Accuracy at epoch ' + str(i) + ': '+str(accuracy))
@@ -146,8 +158,10 @@ def fitValidate(model, X_train, y_train, X_val, y_val, labels, epochs=1000, pati
                 break'''
         if prev_loss == -1:
             prev_loss = loss
+            model.save_weights(model_filename)
         elif loss < prev_loss:
             prev_loss = loss
+            model.save_weights(model_filename)
         else:
             patience_count += 1
             print('Patience count: '+str(patience_count)+'/'+str(patience))
@@ -155,17 +169,18 @@ def fitValidate(model, X_train, y_train, X_val, y_val, labels, epochs=1000, pati
                 print('Loss stopped decreasing')
                 break
         report = classification_report(y_val, y_pred)
-        print('Report at epoch '+str(i))
+        print('\nReport at epoch '+str(i))
+        print('Loss: ' + str(loss))
         print(report)
         cm = confusion_matrix(y_val, y_pred)
         print('Confusion matrix')
         print_cm(cm, labels)
-    return hist
+    model.load_weights(model_filename)
 
 if load_validation:
-    hist = fitValidate(model, X_train, y_train_cat, X_val, y_val, labels, epochs, patience)
+    fitValidate(model, X_train, y_train_cat, X_val, y_val, labels, model_filename, epochs, patience)
 else:
-    hist = fitValidationSplit(model, X_train, y_train_cat, split=2/7, epochs=epochs, patience=patience)
+    fitValidationSplit(model, X_train, y_train_cat, split=2/7, epochs=epochs, patience=patience)
 
 # use early stopping, or for on the epochs to stop for the best net. Measure on the validation on each epoch.
 # measure accuracy every epoch, max accuracy. Save and load  weights.

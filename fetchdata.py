@@ -12,7 +12,7 @@ import json
 from os import path
 
 # fix random seed for reproducibility
-numpy.random.seed(7)
+np.random.seed(7)
 
 def rawdata(filenames, n=-1):
     data = []

@@ -93,3 +93,6 @@ ENV/
 
 # dataset cache data (very large)
 cache_*
+
+# model weights
+*.h5
