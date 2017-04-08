@@ -7,7 +7,8 @@ from keras.callbacks import EarlyStopping
 import numpy
 from fetchdata import loadStratifiedDataset
 from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
-from utils import print_cm
+from utils import print_cm, labels, class_weight_count
+from training import fitValidate, fitValidationSplit
 import getopt
 import sys
 
@@ -20,7 +21,7 @@ load_validation = False       #Load a separate dataset or use a split for valida
 seconds = 5
 nLines = -1
 aggregate = 5
-filenames = ['../SleepEEG/rt 233_180511(1).txt','../SleepEEG/rt 233_180511(2).txt']
+filenames = ['../SleepEEG/rt 233_180511(1).txt','../SleepEEG/rt 233_180511(2).txt', '../SleepEEG/rt 239_310511(1).txt', 'rt 239_310511(2).txt' ]
 neurons = 125
 transitions = False
 n_features = 1
@@ -76,9 +77,18 @@ for o, a in opts:
 n_classes = 3 if not transitions else 4
 length = int(seconds/(sampling_period*aggregate))
 max_length = 2*length if transitions else length
-labels = ['awake','nrem','rem'] if n_classes == 3 else ['nrem-awake','awake-nrem','nrem-rem', 'rem-awake']
+labels = labels(n_classes)
 model_filename = 'weights.h5'
 
+#-----------------------------------load the dataset--------------------------------------
+if load_validation:
+    (X_train, y_train), (X_val, y_val), (X_test, y_test) = loadStratifiedDataset(filenames, aggregate, nLines, seconds, sampling_period, load_validation, transitions=transitions, verbose=verbose,cache=cache)
+else:
+    (X_train, y_train), (X_test, y_test) = loadStratifiedDataset(filenames, aggr=aggregate, validation=load_validation, seconds=seconds, n=nLines, transitions=transitions, verbose=verbose, cache=cache)
+
+class_weights = class_weight_count(y_train)
+
+#----------------------------------print parameters----------------------------------------
 print('Parameters:')
 print('\tsampling_period: '+str(sampling_period))
 print('\tload_validation: '+str(load_validation))
@@ -94,13 +104,8 @@ print('\tmax_length of the sequence: '+ str(max_length))
 print('\tmax epochs: '+ str(epochs))
 print('\tpatience: '+ str(patience))
 print('\tlearning rate: '+ str(learning_rate))
+print('\tclass_weights: '+str(class_weights))
 print()
-
-#-----------------------------------load the dataset--------------------------------------
-if load_validation:
-    (X_train, y_train), (X_val, y_val), (X_test, y_test) = loadStratifiedDataset(filenames, aggregate, nLines, seconds, sampling_period, load_validation, transitions=transitions, verbose=verbose,cache=cache)
-else:
-    (X_train, y_train), (X_test, y_test) = loadStratifiedDataset(filenames, aggr=aggregate, validation=load_validation, seconds=seconds, n=nLines, transitions=transitions, verbose=verbose, cache=cache)
 
 #------------------------------------to categorical----------------------------------------
 y_train_cat = to_categorical(y_train, num_classes=n_classes)
@@ -133,57 +138,12 @@ model.compile(loss='categorical_crossentropy', optimizer=RMSprop(lr=learning_rat
 print(model.summary())
 
 #----------------------------------Fit and Validate---------------------------------------
-def fitValidationSplit(model, X_train, y_train, split=2/7, epochs=1000, patience=10):
-    model.fit(X_train, y_train, validation_split=split, verbose=2, epochs=epochs, callbacks=[EarlyStopping(monitor='loss', patience=100)]) #categorical_accuracy
-
-def fitValidate(model, X_train, y_train, X_val, y_val, labels,  model_filename, epochs=1000, patience=10):
-    #prev_accuracy = -1
-    patience_count = 0
-    prev_loss = -1
-    for i in range(epochs):
-        hist = model.fit(X_train, y_train, verbose=2, epochs=1)
-        loss = hist.history['loss'][0]
-        y_pred = model.predict_classes(X_val)
-        #accuracy = accuracy_score(y_val, y_pred)
-        #print('Accuracy at epoch ' + str(i) + ': '+str(accuracy))
-        '''if prev_accuracy == -1:
-            prev_accuracy = accuracy
-        elif prev_accuracy < accuracy:
-            prev_accuracy = accuracy
-            patience_count = 0
-        else:
-            patience_count += 1
-            if patience_count == patience:
-                print('Accuracy stopped increasing')
-                break'''
-        if prev_loss == -1:
-            prev_loss = loss
-            model.save_weights(model_filename)
-        elif loss < prev_loss:
-            prev_loss = loss
-            model.save_weights(model_filename)
-        else:
-            patience_count += 1
-            print('Patience count: '+str(patience_count)+'/'+str(patience))
-            if patience_count == patience:
-                print('Loss stopped decreasing')
-                break
-        report = classification_report(y_val, y_pred)
-        print('\nReport at epoch '+str(i))
-        print('Loss: ' + str(loss))
-        print(report)
-        cm = confusion_matrix(y_val, y_pred)
-        print('Confusion matrix')
-        print_cm(cm, labels)
-    model.load_weights(model_filename)
 
 if load_validation:
-    fitValidate(model, X_train, y_train_cat, X_val, y_val, labels, model_filename, epochs, patience)
+    fitValidate(model, X_train, y_train_cat, X_val, y_val, labels, model_filename, class_weights, patience)
 else:
     fitValidationSplit(model, X_train, y_train_cat, split=2/7, epochs=epochs, patience=patience)
 
-# use early stopping, or for on the epochs to stop for the best net. Measure on the validation on each epoch.
-# measure accuracy every epoch, max accuracy. Save and load  weights.
 # accuracy up, loss down, at least on train.
 
 # Predict, do the confusion matrix. Precision recall and f1, scikit-learn

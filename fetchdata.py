@@ -10,6 +10,7 @@ from utils import aggregate, normalize, to4Labels
 from collections import deque
 import json
 from os import path
+import hashlib
 
 # fix random seed for reproducibility
 np.random.seed(7)
@@ -175,14 +176,17 @@ def stratifiedTrainValidTest(data, labels, perc_train=0.5, perc_valid=0.2):
     print('test length: '+str(len(testData))+' '+str(len(testLabels)))
     return (trainData,trainLabels), (validateData, validateLabels), (testData, testLabels)
 
-def load_segment_statistics_train_test(filename, perc_train=0.7):
-    data, labels = load_segment_statistics(filename)
+def load_segment_statistics_train_test(filenames, perc_train=0.7):
+    data, labels = load_segment_statistics(filenames)
     return stratifiedTrainTest(data, labels, perc_train)
+
+def load_segment_statistics_train_valid_test(filenames,  perc_train=0.5, perc_valid=0.2):
+    data, labels = load_segment_statistics(filenames)
+    return stratifiedTrainValidTest(data, labels, perc_train, perc_valid)
 
 def stratifiedTrainTest(data,labels,perc_train=0.7):
     trainData, testData, trainLabels, testLabels = train_test_split(data, labels, train_size=perc_train, stratify=labels)
     return (trainData,trainLabels), (testData, testLabels)
-
 
 def load_datalabels_arrays(filenames,aggr,n,seconds,sampling_period,transitions,verbose):
     dataLabels = rawdataIterator(filenames, n)
@@ -194,6 +198,8 @@ def load_datalabels_arrays(filenames,aggr,n,seconds,sampling_period,transitions,
 
 def cachedDatalabels(filenames, aggr=1, n=-1, seconds=5, sampling_period=0.002, validation=False, transitions=False, verbose=True):
     dumpedfilename = 'cache' + '_a'+str(aggr)+'_n'+str(n)+'_s'+str(seconds)
+    fnhash = hashlib.sha224(''.join(filenames).encode()).hexdigest()[:8]
+    dumpedfilename += '_f' +fnhash
     dumpedfilename = dumpedfilename + '_t.json' if transitions else dumpedfilename + '.json'
     data, labels = [], []
     if path.isfile(dumpedfilename):

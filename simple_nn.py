@@ -4,46 +4,63 @@ from keras.utils.np_utils import to_categorical
 from keras.optimizers import RMSprop
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
-from fetchdata import load_segment_statistics_train_test
-from utils import normalizeColumns, print_cm
+from fetchdata import load_segment_statistics_train_test, load_segment_statistics_train_valid_test
+from utils import normalizeColumns, print_cm, labels, print_parameters, class_weight_count
+from training import fitValidate
 import numpy as np
+import sys
 
 filenames = ['../crunched_data/239.csv','../crunched_data/233.csv']
+learning_rate = 0.0001
+patience = 100
+n_hidden_layers = 3
+activation = 'sigmoid' #or relu, or...
 
-(trainData,trainLabels), (testData, testLabels) = load_segment_statistics_train_test(filenames, perc_train=0.8)
+#(trainData,trainLabels), (testData, testLabels) = load_segment_statistics_train_test(filenames, perc_train=0.8)
+(trainData,trainLabels), (validData, validLabels), (testData, testLabels) = load_segment_statistics_train_valid_test(filenames, perc_train=0.7, perc_valid=0.1)
+
+#sys.exit()
+class_weights = class_weight_count(trainLabels)
+
+print('Parameters')
+print_parameters('\t', filenames=filenames, learning_rate=learning_rate, patience=patience, class_weights=class_weights)
+
 
 #categorical
 trainLabelsCat = to_categorical(trainLabels,num_classes=3)
+#validLabelsCat = to_categorical(validLabels, num_classes=3)
+
+#trainData = np.array(trainData)
+#Normalized
+normTrainData = normalizeColumns(trainData)
+normValidData = normalizeColumns(validData)
+normTestData = normalizeColumns(testData)
 
 model = Sequential()
-model.add(Dense(10, input_dim=5, activation='sigmoid'))
-model.add(Dense(10, activation='sigmoid'))
+model.add(Dense(10, input_dim=5, activation=activation))
+for i in range(n_hidden_layers-1):
+    model.add(Dense(10, activation=activation))
+#model.add(Dense(10, activation='relu'))
 model.add(Dense(3, activation='softmax'))
 
-model.compile(optimizer=RMSprop(lr=0.001),
+model.compile(optimizer=RMSprop(lr=learning_rate),
               loss='categorical_crossentropy',
               metrics=['accuracy'])
 print(model.summary())
 
-trainData = np.array(trainData)
-
-normTrainData = normalizeColumns(trainData)
-normTestData = normalizeColumns(testData)
-#trainLabelsNp = np.array(trainLabels)
-
-print('train shape: '+str(trainData.shape))
+#print('train shape: '+str(trainData.shape))
 #print(str(trainData))
 #print('labels shape: '+ str(trainLabelsNp.shape))
 #print(str(trainLabelsNp))
 
-hist = model.fit(normTrainData, trainLabelsCat, epochs=5000)
+#hist = model.fit(normTrainData, trainLabelsCat, epochs=5000)
+fitValidate(model, normTrainData, trainLabelsCat, normValidData, validLabels, labels(), 'simple_weights.h5',class_weights, patience)
 
 y_pred = model.predict_classes(normTestData)
 
 cm = confusion_matrix(testLabels, y_pred)
 print()
 print('Test confusion Matrix')
-print_cm(cm)
-#print(cm)
+print_cm(cm, labels())
 cr = classification_report(testLabels, y_pred)
 print(cr)

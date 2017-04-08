@@ -3,6 +3,7 @@ import numpy as np
 from collections import deque
 from os import path
 import json
+import math
 
 def aggregate(array, n=1, fn=st.mean):
     i = 0
@@ -52,6 +53,9 @@ def to4Labels(prevLabel, curLabel):
            '00':0,   #awake-awake (not found, but useful at the start)
            '11':1}   #nrem-nrem (not found, but useful at the start)
     return dic[str(prevLabel)+str(curLabel)]
+
+def labels(n_classes=3):
+    return ['awake','nrem','rem'] if n_classes == 3 else ['nrem-awake','awake-nrem','nrem-rem', 'rem-awake']
 
 def json_file_cached(fn):
     '''
@@ -106,3 +110,46 @@ def print_cm(cm, labels, hide_zeroes=False, hide_diagonal=False, hide_threshold=
                 cell = cell if cm[i, j] > hide_threshold else empty_cell
             print(cell, end=' ')
         print()
+
+def items_count(l):
+    d = dict()
+    for i in l:
+        if i in d.keys():
+            d[i] += 1
+        else:
+            d[i] = 1
+    return d
+
+def normalize_counts(d):
+    l = sum(i for i in d.values())
+    nd = {}
+    for k,v in d.items():
+        nd[k] = v/l
+    return nd
+
+def invert_counts(d):
+    nd = {}
+    for k,d in d.items():
+        nd[k] = 1.0/d
+    return nd
+
+def inverted_counts(l):
+    return invert_counts(items_count(l))
+
+def softmax_dict(d):
+    nd = {}
+    den = sum(math.exp(z) for z in d.values())
+    for k,v in d.items():
+        nd[k] = math.exp(v)/den
+    return nd
+
+def class_weight_count(labels):
+    counts = items_count(labels)
+    print('Label counts: '+str(counts))
+    nc = normalize_counts(counts)
+    print('Normalized counts: '+str(nc))
+    ic = invert_counts(counts)
+    print('Inverted counts: '+ str(ic))
+    inc = invert_counts(nc)
+    print('Inverted normalized counts: '+ str(inc))
+    return inc
