@@ -15,6 +15,7 @@ learning_rate = 0.0001
 patience = 100
 n_hidden_layers = 3
 activation = 'sigmoid' #or relu, or...
+resume = True
 
 #(trainData,trainLabels), (testData, testLabels) = load_segment_statistics_train_test(filenames, perc_train=0.8)
 (trainData,trainLabels), (validData, validLabels), (testData, testLabels) = load_segment_statistics_train_valid_test(filenames, perc_train=0.7, perc_valid=0.1)
@@ -23,7 +24,7 @@ activation = 'sigmoid' #or relu, or...
 class_weights = class_weight_count(trainLabels)
 
 print('Parameters')
-print_parameters('\t', filenames=filenames, learning_rate=learning_rate, patience=patience, class_weights=class_weights)
+print_parameters('\t', filenames=filenames, learning_rate=learning_rate, patience=patience, class_weights=class_weights, resume=resume)
 
 
 #categorical
@@ -54,7 +55,7 @@ print(model.summary())
 #print(str(trainLabelsNp))
 
 #hist = model.fit(normTrainData, trainLabelsCat, epochs=5000)
-fitValidate(model, normTrainData, trainLabelsCat, normValidData, validLabels, labels(), 'simple_weights.h5',class_weights, patience)
+fitValidate(model, normTrainData, trainLabelsCat, normValidData, validLabels, labels(), 'simple_weights.h5',class_weights, patience, resume)
 
 y_pred = model.predict_classes(normTestData)
 

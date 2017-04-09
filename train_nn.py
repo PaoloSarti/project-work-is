@@ -21,7 +21,7 @@ load_validation = False       #Load a separate dataset or use a split for valida
 seconds = 5
 nLines = -1
 aggregate = 5
-filenames = ['../SleepEEG/rt 233_180511(1).txt','../SleepEEG/rt 233_180511(2).txt', '../SleepEEG/rt 239_310511(1).txt', 'rt 239_310511(2).txt' ]
+filenames = ['../SleepEEG/rt 233_180511(1).txt','../SleepEEG/rt 233_180511(2).txt', '../SleepEEG/rt 239_310511(1).txt', '../SleepEEG/rt 239_310511(2).txt' ]
 neurons = 125
 transitions = False
 n_features = 1
@@ -34,7 +34,7 @@ resume = False
  
 #----------------------------------Command line options-----------------------------------
 try:
-    opts, args = getopt.getopt(sys.argv[1:], 'f:n:a:s:e:p:ltvch')
+    opts, args = getopt.getopt(sys.argv[1:], 'f:n:a:s:e:p:lrtvch')
 except getopt.GetoptError as err:
     print(err)
     sys.exit(2)
@@ -71,7 +71,7 @@ for o, a in opts:
         -l: load a separate dataset for validation, otherwise, a split in the training set is used. More information can be given during training in this way.
         -t: consider s seconds of eeg before the transition. The number of classes takes into account the transitions.
         -c: cache the loaded segments into a file, for a much faster loading the next time (with the same parameters).
-        -r: load the weights from the previous computation
+        -r: resume: load the weights from the previous computation
         -v: verbose. Log info about the segments being loaded.
         -h: show this help and quit.
         ''')
@@ -110,6 +110,7 @@ print('\tmax epochs: '+ str(epochs))
 print('\tpatience: '+ str(patience))
 print('\tlearning rate: '+ str(learning_rate))
 print('\tclass_weights: '+str(class_weights))
+print('\tresume: '+str(resume))
 print()
 
 #------------------------------------to categorical----------------------------------------
@@ -135,7 +136,7 @@ X_test = reshape(X_test, max_length, n_features)
 
 #---------------------------------------Model---------------------------------------------
 model = Sequential()
-model.add(LSTM(neurons, input_shape=(max_length,1))) #for more layers ,return_sequences=True
+model.add(GRU(neurons, input_shape=(max_length,1))) #for more layers ,return_sequences=True
 #Add layers here
 #model.add(LSTM(neurons))
 model.add(Dense(n_classes, activation='softmax'))
