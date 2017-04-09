@@ -5,11 +5,13 @@ from utils import print_cm
 def fitValidationSplit(model, X_train, y_train, split=2/7, epochs=1000, patience=10):
     model.fit(X_train, y_train, validation_split=split, verbose=2, epochs=epochs, callbacks=[EarlyStopping(monitor='loss', patience=100)]) #categorical_accuracy
 
-def fitValidate(model, X_train, y_train, X_val, y_val, labels,  model_filename, class_weights, patience=10):
+def fitValidate(model, X_train, y_train, X_val, y_val, labels,  model_filename, class_weights, patience=10, resume=False):
     prev_accuracy = -1
     patience_count = 0
     prev_loss = -1
     i = 0
+    if resume:
+        model.load_weights(model_filename)
     while True:
         hist = model.fit(X_train, y_train, verbose=2, epochs=1, class_weight=class_weights)
         loss = hist.history['loss'][0]

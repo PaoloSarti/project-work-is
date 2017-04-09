@@ -30,6 +30,7 @@ epochs = 1000
 patience = 10
 learning_rate = 0.00001
 cache = False
+resume = False
  
 #----------------------------------Command line options-----------------------------------
 try:
@@ -58,8 +59,10 @@ for o, a in opts:
         cache = True
     elif o == '-p':
         patience = int(a)
+    elif o == '-r':
+        resume = True
     elif o == '-h':
-        print('''USAGE: python train_nn.py [-n <nLines>] [-f <filenames>] [-a <aggregate>] [-e <epochs>] [-s <seconds>] [-p <patience>] [-l] [-t] [-v] [-c] [-h]
+        print('''USAGE: python train_nn.py [-n <nLines>] [-f <filenames>] [-a <aggregate>] [-e <epochs>] [-s <seconds>] [-p <patience>] [-l] [-t] [-v] [-c] [-r] [-h] 
         -n <nLines>: number of lines to fetch from the files. Default: all.
         -a <aggregate>: number of eeg values to aggregate together, taking the average. Default: 5.
         -e <epochs>: number of max epochs. Default 1000.
@@ -68,6 +71,7 @@ for o, a in opts:
         -l: load a separate dataset for validation, otherwise, a split in the training set is used. More information can be given during training in this way.
         -t: consider s seconds of eeg before the transition. The number of classes takes into account the transitions.
         -c: cache the loaded segments into a file, for a much faster loading the next time (with the same parameters).
+        -r: load the weights from the previous computation
         -h: show this help and quit.
         ''')
         sys.exit()
@@ -140,7 +144,7 @@ print(model.summary())
 #----------------------------------Fit and Validate---------------------------------------
 
 if load_validation:
-    fitValidate(model, X_train, y_train_cat, X_val, y_val, labels, model_filename, class_weights, patience)
+    fitValidate(model, X_train, y_train_cat, X_val, y_val, labels, model_filename, class_weights, patience, resume)
 else:
     fitValidationSplit(model, X_train, y_train_cat, split=2/7, epochs=epochs, patience=patience)
 

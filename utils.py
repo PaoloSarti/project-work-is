@@ -145,11 +145,11 @@ def softmax_dict(d):
 
 def class_weight_count(labels):
     counts = items_count(labels)
-    print('Label counts: '+str(counts))
+    #print('Label counts: '+str(counts))
     nc = normalize_counts(counts)
-    print('Normalized counts: '+str(nc))
+    #print('Normalized counts: '+str(nc))
     ic = invert_counts(counts)
-    print('Inverted counts: '+ str(ic))
+    #print('Inverted counts: '+ str(ic))
     inc = invert_counts(nc)
-    print('Inverted normalized counts: '+ str(inc))
-    return inc
+    #print('Inverted normalized counts: '+ str(inc))
+    return normalize_counts(inc)
