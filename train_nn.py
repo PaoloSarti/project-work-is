@@ -72,6 +72,7 @@ for o, a in opts:
         -t: consider s seconds of eeg before the transition. The number of classes takes into account the transitions.
         -c: cache the loaded segments into a file, for a much faster loading the next time (with the same parameters).
         -r: load the weights from the previous computation
+        -v: verbose. Log info about the segments being loaded.
         -h: show this help and quit.
         ''')
         sys.exit()
