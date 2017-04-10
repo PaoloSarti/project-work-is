@@ -18,15 +18,16 @@ n_hidden_layers = 3
 activation = 'relu'
 resume = False
 neurons = 10
+pad_prev = True
 
 #(trainData,trainLabels), (testData, testLabels) = load_segment_statistics_train_test(filenames, perc_train=0.8)
 #load_segment_statistics_train_valid_test(filenames, perc_train=0.7, perc_valid=0.1)
-(trainData,trainLabels), (validData, validLabels), (testData, testLabels) = load_cols_train_valid_test(filenames, perc_train=0.7, perc_valid=0.1)
+(trainData,trainLabels), (validData, validLabels), (testData, testLabels) = load_cols_train_valid_test(filenames, perc_train=0.7, perc_valid=0.1, pad_prev=pad_prev)
 
 class_weights = class_weights_max_num(trainLabels)
 
 print('Parameters')
-print_parameters('\t', filenames=filenames, learning_rate=learning_rate, patience=patience, class_weights=class_weights, resume=resume)
+print_parameters('\t', filenames=filenames, learning_rate=learning_rate, patience=patience, class_weights=class_weights, resume=resume, pad_prev=pad_prev)
 
 #categorical
 trainLabelsCat = to_categorical(trainLabels,num_classes=3)

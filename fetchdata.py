@@ -73,7 +73,7 @@ def load_cols_labels(filenames,cols=None,label=None,delim=','):
 
 def pad_previous(data, labels):
     padded_data = []
-    padded_labels = [1:]
+    padded_labels = labels[1:]
     prev = data[0]
     for i in range(1,len(data)):
         padded_data.append(prev + data[i])
@@ -220,7 +220,7 @@ def load_cols_train_test(filenames, perc_train=0.7, pad_prev=True):
         data, labels = pad_previous(data, labels)
     return stratifiedTrainTest(data, labels, perc_train)
 
-def load_cols_train_valid_test(filenames, perc_train=0.5, perc_valid=0.2):
+def load_cols_train_valid_test(filenames, perc_train=0.5, perc_valid=0.2, pad_prev=True):
     data, labels = load_cols_labels(filenames)
     if pad_prev:
         data, labels = pad_previous(data, labels)
