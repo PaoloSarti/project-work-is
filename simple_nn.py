@@ -1,5 +1,6 @@
 from keras.layers import Dense,Activation
 from keras.models import Sequential
+from keras.layers.normalization import BatchNormalization
 from keras.utils.np_utils import to_categorical
 from keras.optimizers import RMSprop
 from sklearn.metrics import classification_report
@@ -22,7 +23,6 @@ neurons = 10
 #load_segment_statistics_train_valid_test(filenames, perc_train=0.7, perc_valid=0.1)
 (trainData,trainLabels), (validData, validLabels), (testData, testLabels) = load_cols_train_valid_test(filenames, perc_train=0.7, perc_valid=0.1)
 
-#sys.exit()
 class_weights = class_weights_max_num(trainLabels)
 
 print('Parameters')
@@ -41,8 +41,10 @@ normTestData = normalizeColumns(testData)
 
 model = Sequential()
 model.add(Dense(neurons, input_dim=normTrainData.shape[1], activation=activation))
+model.add(BatchNormalization())
 for i in range(n_hidden_layers-1):
     model.add(Dense(neurons, activation=activation))
+    model.add(BatchNormalization())
 model.add(Dense(3, activation='softmax'))
 
 model.compile(optimizer=RMSprop(lr=learning_rate),

@@ -7,7 +7,7 @@ from keras.callbacks import EarlyStopping
 import numpy
 from fetchdata import loadStratifiedDataset
 from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
-from utils import print_cm, labels, class_weight_max_num
+from utils import print_cm, labels, class_weights_max_num
 from training import fitValidate, fitValidationSplit
 import getopt
 import sys
@@ -91,7 +91,7 @@ if load_validation:
 else:
     (X_train, y_train), (X_test, y_test) = loadStratifiedDataset(filenames, aggr=aggregate, validation=load_validation, seconds=seconds, n=nLines, transitions=transitions, verbose=verbose, cache=cache)
 
-class_weights = class_weight_max_num(y_train)
+class_weights = class_weights_max_num(y_train)
 
 #----------------------------------print parameters----------------------------------------
 print('Parameters:')
