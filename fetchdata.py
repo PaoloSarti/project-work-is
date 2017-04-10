@@ -71,6 +71,15 @@ def load_cols_labels(filenames,cols=None,label=None,delim=','):
                 labels.append(int(row[label]))
     return data,labels
 
+def pad_previous(data, labels):
+    padded_data = []
+    padded_labels = [1:]
+    prev = data[0]
+    for i in range(1,len(data)):
+        padded_data.append(prev + data[i])
+        prev = data[i]
+    return padded_data, padded_labels
+
 def load_segment_statistics(filenames, delim=','):
     data = []
     labels = []
@@ -205,12 +214,16 @@ def load_segment_statistics_train_valid_test(filenames,  perc_train=0.5, perc_va
     data, labels = load_segment_statistics(filenames)
     return stratifiedTrainValidTest(data, labels, perc_train, perc_valid)
 
-def load_cols_train_test(filenames, perc_train=0.7):
+def load_cols_train_test(filenames, perc_train=0.7, pad_prev=True):
     data, labels = load_cols_labels(filenames)
+    if pad_prev:
+        data, labels = pad_previous(data, labels)
     return stratifiedTrainTest(data, labels, perc_train)
 
 def load_cols_train_valid_test(filenames, perc_train=0.5, perc_valid=0.2):
     data, labels = load_cols_labels(filenames)
+    if pad_prev:
+        data, labels = pad_previous(data, labels)
     return stratifiedTrainValidTest(data, labels, perc_train, perc_valid)
 
 def stratifiedTrainTest(data,labels,perc_train=0.7):

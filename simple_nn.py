@@ -15,7 +15,7 @@ filenames = ['../crunched_data/239_f.csv','../crunched_data/233_f.csv']
 learning_rate = 0.0001
 patience = 100
 n_hidden_layers = 3
-activation = 'relu' #or relu, or...
+activation = 'relu'
 resume = False
 neurons = 10
 
@@ -28,10 +28,8 @@ class_weights = class_weights_max_num(trainLabels)
 print('Parameters')
 print_parameters('\t', filenames=filenames, learning_rate=learning_rate, patience=patience, class_weights=class_weights, resume=resume)
 
-
 #categorical
 trainLabelsCat = to_categorical(trainLabels,num_classes=3)
-#validLabelsCat = to_categorical(validLabels, num_classes=3)
 
 #trainData = np.array(trainData)
 #Normalized
@@ -52,12 +50,6 @@ model.compile(optimizer=RMSprop(lr=learning_rate),
               metrics=['accuracy'])
 print(model.summary())
 
-#print('train shape: '+str(trainData.shape))
-#print(str(trainData))
-#print('labels shape: '+ str(trainLabelsNp.shape))
-#print(str(trainLabelsNp))
-
-#hist = model.fit(normTrainData, trainLabelsCat, epochs=5000)
 fitValidate(model, normTrainData, trainLabelsCat, normValidData, validLabels, labels(), 'simple_weights.h5',class_weights, patience, resume)
 
 y_pred = model.predict_classes(normTestData)
