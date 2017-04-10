@@ -155,6 +155,14 @@ def class_weight_count(labels):
     #print('Inverted normalized counts: '+ str(inc))
     return normalize_counts(inc)
 
+def class_weights_max_num(labels):
+    counts = items_count(labels)
+    max_count = max(counts.values())
+    weights = dict()
+    for key,value in counts.items():
+        weights[key] = max_count / counts[key]
+    return weights
+
 def rfft_amp_phase(signal):
     ft = np.fft.rfft(signal)
     ap = np.array([[abs(c),np.angle(c)] for c in ft]).T

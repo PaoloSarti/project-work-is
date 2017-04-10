@@ -5,7 +5,7 @@ from keras.optimizers import RMSprop
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 from fetchdata import load_segment_statistics_train_test, load_segment_statistics_train_valid_test, load_cols_train_valid_test
-from utils import normalizeColumns, print_cm, labels, print_parameters, class_weight_count
+from utils import normalizeColumns, print_cm, labels, print_parameters, class_weights_max_num
 from training import fitValidate
 import numpy as np
 import sys
@@ -23,7 +23,7 @@ neurons = 10
 (trainData,trainLabels), (validData, validLabels), (testData, testLabels) = load_cols_train_valid_test(filenames, perc_train=0.7, perc_valid=0.1)
 
 #sys.exit()
-class_weights = class_weight_count(trainLabels)
+class_weights = class_weights_max_num(trainLabels)
 
 print('Parameters')
 print_parameters('\t', filenames=filenames, learning_rate=learning_rate, patience=patience, class_weights=class_weights, resume=resume)
