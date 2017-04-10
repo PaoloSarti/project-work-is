@@ -4,11 +4,11 @@ from sklearn.metrics import precision_recall_fscore_support
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import classification_report
 from sklearn.model_selection import cross_val_score
-from fetchdata import load_segment_statistics_train_test, load_segment_statistics
+from fetchdata import load_segment_statistics_train_test, load_segment_statistics, load_cols_train_test
 from utils import print_cm, print_parameters
 import pydotplus
 
-filenames = ['../crunched_data/233.csv','../crunched_data/239.csv']
+filenames = ['../crunched_data/233_f.csv','../crunched_data/239_f.csv']
 pdffile = '233_239.pdf'
 dotfile = '239_tree.dot'
 labels = ['Awake','Nrem','Rem']
@@ -19,7 +19,7 @@ max_depth = 5
 print('Parameters')
 print_parameters('\t', filenames=filenames, criterion=crit, min_samples_split=min_split, max_depth=max_depth)
 
-(trainData,trainLabels), (testData, testLabels) = load_segment_statistics_train_test(filenames, perc_train=0.8)
+(trainData,trainLabels), (testData, testLabels) = load_cols_train_test(filenames, perc_train=0.8) #load_segment_statistics_train_test(filenames, perc_train=0.8)
 
 classifier = tree.DecisionTreeClassifier(criterion='gini',#entrpy
                                          min_samples_split=20,

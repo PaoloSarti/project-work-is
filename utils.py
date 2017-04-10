@@ -4,6 +4,7 @@ from collections import deque
 from os import path
 import json
 import math
+from matplotlib import pyplot as plt
 
 def aggregate(array, n=1, fn=st.mean):
     i = 0
@@ -153,3 +154,24 @@ def class_weight_count(labels):
     inc = invert_counts(nc)
     #print('Inverted normalized counts: '+ str(inc))
     return normalize_counts(inc)
+
+def rfft_amp_phase(signal):
+    ft = np.fft.rfft(signal)
+    ap = np.array([[abs(c),np.angle(c)] for c in ft]).T
+    return (ap[0], ap[1])
+
+def plot_amp_phase(amp, phase):
+    plt.figure(1)
+    a = plt.subplot(211)
+    #a.set_xscale('log')
+    a.set_xlabel('frequncy [Hz]')
+    a.set_ylabel('|amplitude|')
+    a.plot(amp)
+    b = plt.subplot(212)
+    b.set_xlabel('frequency [Hz]')
+    b.set_ylabel('Phase')
+    plt.plot(phase)
+    plt.show()
+
+def join_args(sep, *args):
+    return sep.join(str(i) for i in args)

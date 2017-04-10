@@ -11,9 +11,13 @@ from collections import deque
 import json
 from os import path
 import hashlib
+from utils import rfft_amp_phase, plot_amp_phase, join_args
 
 # fix random seed for reproducibility
 np.random.seed(7)
+
+def csv_headers_freq():
+    return ['SegmentLength','SegmentMin','SegmentMax','SegmentAvg','SegmentStdDev','FreqAmplMin','FreqAmplMax','FreqAmplAvg','FreqAmplStdev']
 
 def rawdata(filenames, n=-1):
     data = []
@@ -50,16 +54,33 @@ def rawdataIterator(filenames, n=-1, delim='\t'):
                     f.close()
                     raise StopIteration()
 
-def load_segment_statistics(filenames):
+def load_cols_labels(filenames,cols=None,label=None,delim=','):
     data = []
     labels = []
     for filename in filenames:
         with open(filename) as f:
-            reader = csv.DictReader(f, delimiter=',')
+            reader = csv.DictReader(f, delimiter=delim)
+            l = len(reader.fieldnames)
+            if cols == None:
+                cols = reader.fieldnames[:l-1]
+            if label == None:
+                label = reader.fieldnames[l-1]
+            for row in reader:
+                instance = [float(row[col]) for col in cols]
+                data.append(instance)
+                labels.append(int(row[label]))
+    return data,labels
+
+def load_segment_statistics(filenames, delim=','):
+    data = []
+    labels = []
+    for filename in filenames:
+        with open(filename) as f:
+            reader = csv.DictReader(f, delimiter=delim)
             for row in reader:
                 #print(str(row))
                 instance = []
-                instance.append(int(row['SegmentLength']))
+                instance.append(float(row['SegmentLength']))
                 instance.append(float(row['SegmentMin']))
                 instance.append(float(row['SegmentMax']))
                 instance.append(float(row['SegmentAvg']))
@@ -184,6 +205,14 @@ def load_segment_statistics_train_valid_test(filenames,  perc_train=0.5, perc_va
     data, labels = load_segment_statistics(filenames)
     return stratifiedTrainValidTest(data, labels, perc_train, perc_valid)
 
+def load_cols_train_test(filenames, perc_train=0.7):
+    data, labels = load_cols_labels(filenames)
+    return stratifiedTrainTest(data, labels, perc_train)
+
+def load_cols_train_valid_test(filenames, perc_train=0.5, perc_valid=0.2):
+    data, labels = load_cols_labels(filenames)
+    return stratifiedTrainValidTest(data, labels, perc_train, perc_valid)
+
 def stratifiedTrainTest(data,labels,perc_train=0.7):
     trainData, testData, trainLabels, testLabels = train_test_split(data, labels, train_size=perc_train, stratify=labels)
     return (trainData,trainLabels), (testData, testLabels)
@@ -284,7 +313,6 @@ def saveSegmentsFigs(segmentedData, labels, step, basefilename):
         plt.savefig(basefilename + '_' + str(i) + '_' + str(labels[i]) + '.png')
         plt.clf()
 
-
 def segmentWithLabelAndLength(data, labels, n):
     lists = []
     listsLabels = []
@@ -335,6 +363,25 @@ def printCsvSegmentsReduceRes(filenames, n, r):
         stdev = st.pstdev(seg,avg)
         print(str(l) + ',' + str(mi) + ',' + str(ma) + ',' + str(avg) + ',' + str(stdev) +',' + str(label))
 
+def printCsvSegmentsFreq(filenames, n):
+    dataLabels = rawdataIterator(filenames,n)
+    segments = segmentIterator(dataLabels,verbose=False)
+    print('SegmentLength,SegmentMin,SegmentMax,SegmentAvg,SegmentStdDev,FreqAmplMin,FreqAmplMax,FreqAmplAvg,FreqAmplStdev,Label')
+    for (seg,label) in segments:
+        l = len(seg)
+        mi = min(seg)
+        ma = max(seg)
+        avg = st.mean(seg)
+        stdev = st.pstdev(seg,avg)
+        a,p = rfft_amp_phase(seg)
+        a = a[2:] #throw away freq 0
+        fami = min(a)
+        fama = max(a)
+        faav = st.mean(a)
+        fasd = st.stdev(a)
+        print(join_args(',',l, mi, ma, avg, stdev, fami, fama, faav, fasd, label))
+        #print(str(l) + ',' + str(mi) + ',' + str(ma) + ',' + str(avg) + ',' + str(stdev) +',' +str(fami)+','+str(fama)+','+str(faav)+','+str(fasd)+','+str(label))
+
 def visualizeResReduction(filenames, n=-1, res=1):
     dataLabels = rawdataIterator(filenames, n)
     dataLabels = reduceResolution(dataLabels, res)
@@ -352,10 +399,26 @@ def visualizeSeconds(filenames, n=-1, res=1, seconds=-1):
         segn = normalize(seg)
         visualize(segn,0.002*res)
 
+def visualizeSecondsAmpPhase(filenames, n=-1, aggr=1, seconds=-1):
+    dataLabels = rawdataIterator(filenames, n)
+    segmentsLabels = segmentIterator(dataLabels,int(seconds/(0.002)),cut_until_change=True,aggr=aggr)
+    for (seg, label) in segmentsLabels:
+        print('Label: ' + str(label))
+        print('Lenght of segment: '+str(len(seg)))
+        #nseg = normalize(seg)
+        a,p = rfft_amp_phase(seg)
+        a, p = a, p       #throw away the freq 0
+        print('Length of ft: '+str(len(a)))
+        print('Mean amplitude: '+ str(st.mean(a)))
+        print('Stdev amplitude: '+ str(st.stdev(a)))
+        #print('Mean phase: '+str(st.mean(p)))
+        #print('Stdev phase: '+str(st.stdev(p)))
+        plot_amp_phase(a,p)
+
 def main():
-    #filename = '../SleepEEG/rt 233_180511(1).txt'
-    #filename1 = '../SleepEEG/rt 233_180511(2).txt'
-    filenames = ['../SleepEEG/rt 239_310511(1).txt','../SleepEEG/rt 239_310511(2).txt']
+    #filenames = ['../SleepEEG/rt 233_180511(1).txt','../SleepEEG/rt 233_180511(2).txt']
+    #filenames = ['../SleepEEG/rt 239_310511(1).txt','../SleepEEG/rt 239_310511(2).txt']
+    filenames = ['../SleepEEG/rt 233_180511(1).txt','../SleepEEG/rt 233_180511(2).txt','../SleepEEG/rt 239_310511(1).txt','../SleepEEG/rt 239_310511(2).txt']
     n = -1 #all data
     r = 1 #no reduction #250
     seconds = 5
@@ -379,15 +442,17 @@ def main():
         else:
             sys.exit(3)
 
-    print(str(filenames))
-    print(str(n))
-    print(str(r))
-    print(str(seconds))
+    #print(str(filenames))
+    #print(str(n))
+    #print(str(r))
+    #print(str(seconds))
     #printCsvSegments(filename,n)
     #printCsvSegmentsIterator([filename,filename1],n)
     #printCsvSegmentsReduceRes([filename,filename1],n, r)
     #visualizeResReduction(filenames,n,r)
-    visualizeSeconds(filenames,n,r,seconds)
-    
+    #visualizeSeconds(filenames,n,r,seconds)
+    #visualizeSecondsAmpPhase(filenames, n, r, seconds)
+    printCsvSegmentsFreq(filenames,n)
+
 if __name__ == '__main__':
     main()

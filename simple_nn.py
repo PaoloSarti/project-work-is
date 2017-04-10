@@ -4,21 +4,23 @@ from keras.utils.np_utils import to_categorical
 from keras.optimizers import RMSprop
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
-from fetchdata import load_segment_statistics_train_test, load_segment_statistics_train_valid_test
+from fetchdata import load_segment_statistics_train_test, load_segment_statistics_train_valid_test, load_cols_train_valid_test
 from utils import normalizeColumns, print_cm, labels, print_parameters, class_weight_count
 from training import fitValidate
 import numpy as np
 import sys
 
-filenames = ['../crunched_data/239.csv','../crunched_data/233.csv']
+filenames = ['../crunched_data/239_f.csv','../crunched_data/233_f.csv']
 learning_rate = 0.0001
 patience = 100
 n_hidden_layers = 3
-activation = 'sigmoid' #or relu, or...
-resume = True
+activation = 'relu' #or relu, or...
+resume = False
+neurons = 10
 
 #(trainData,trainLabels), (testData, testLabels) = load_segment_statistics_train_test(filenames, perc_train=0.8)
-(trainData,trainLabels), (validData, validLabels), (testData, testLabels) = load_segment_statistics_train_valid_test(filenames, perc_train=0.7, perc_valid=0.1)
+#load_segment_statistics_train_valid_test(filenames, perc_train=0.7, perc_valid=0.1)
+(trainData,trainLabels), (validData, validLabels), (testData, testLabels) = load_cols_train_valid_test(filenames, perc_train=0.7, perc_valid=0.1)
 
 #sys.exit()
 class_weights = class_weight_count(trainLabels)
@@ -38,10 +40,9 @@ normValidData = normalizeColumns(validData)
 normTestData = normalizeColumns(testData)
 
 model = Sequential()
-model.add(Dense(10, input_dim=5, activation=activation))
+model.add(Dense(neurons, input_dim=normTrainData.shape[1], activation=activation))
 for i in range(n_hidden_layers-1):
-    model.add(Dense(10, activation=activation))
-#model.add(Dense(10, activation='relu'))
+    model.add(Dense(neurons, activation=activation))
 model.add(Dense(3, activation='softmax'))
 
 model.compile(optimizer=RMSprop(lr=learning_rate),
@@ -61,7 +62,8 @@ y_pred = model.predict_classes(normTestData)
 
 cm = confusion_matrix(testLabels, y_pred)
 print()
-print('Test confusion Matrix')
-print_cm(cm, labels())
+print('Test classification report')
 cr = classification_report(testLabels, y_pred)
 print(cr)
+print('Test confusion Matrix')
+print_cm(cm, labels())
