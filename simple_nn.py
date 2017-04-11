@@ -6,8 +6,8 @@ from keras.optimizers import RMSprop
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 from fetchdata import load_segment_statistics_train_test, load_segment_statistics_train_valid_test, load_cols_train_valid_test
-from utils import normalizeColumns, print_cm, labels, print_parameters, class_weights_max_num
-from training import fitValidate
+from utils import normalizeColumns, print_cm, label_names, print_parameters, class_weights_max
+from training import fitValidate, predict_test
 import numpy as np
 import sys
 
@@ -17,14 +17,14 @@ patience = 100
 n_hidden_layers = 3
 activation = 'relu'
 resume = False
-neurons = 10
+neurons = 20
 pad_prev = True
 
 #(trainData,trainLabels), (testData, testLabels) = load_segment_statistics_train_test(filenames, perc_train=0.8)
 #load_segment_statistics_train_valid_test(filenames, perc_train=0.7, perc_valid=0.1)
 (trainData,trainLabels), (validData, validLabels), (testData, testLabels) = load_cols_train_valid_test(filenames, perc_train=0.7, perc_valid=0.1, pad_prev=pad_prev)
 
-class_weights = class_weights_max_num(trainLabels)
+class_weights = class_weights_max(trainLabels)
 
 print('Parameters')
 print_parameters('\t', filenames=filenames, learning_rate=learning_rate, patience=patience, class_weights=class_weights, resume=resume, pad_prev=pad_prev)
@@ -51,14 +51,6 @@ model.compile(optimizer=RMSprop(lr=learning_rate),
               metrics=['accuracy'])
 print(model.summary())
 
-fitValidate(model, normTrainData, trainLabelsCat, normValidData, validLabels, labels(), 'simple_weights.h5',class_weights, patience, resume)
+fitValidate(model, normTrainData, trainLabelsCat, normValidData, validLabels, label_names(), 'simple_weights.h5',class_weights, patience, resume)
 
-y_pred = model.predict_classes(normTestData)
-
-cm = confusion_matrix(testLabels, y_pred)
-print()
-print('Test classification report')
-cr = classification_report(testLabels, y_pred)
-print(cr)
-print('Test confusion Matrix')
-print_cm(cm, labels())
+predict_test(model, normTestData, testLabels)

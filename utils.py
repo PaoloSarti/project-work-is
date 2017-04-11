@@ -55,7 +55,7 @@ def to4Labels(prevLabel, curLabel):
            '11':1}   #nrem-nrem (not found, but useful at the start)
     return dic[str(prevLabel)+str(curLabel)]
 
-def labels(n_classes=3):
+def label_names(n_classes=3):
     return ['awake','nrem','rem'] if n_classes == 3 else ['nrem-awake','awake-nrem','nrem-rem', 'rem-awake']
 
 def json_file_cached(fn):
@@ -112,6 +112,10 @@ def print_cm(cm, labels, hide_zeroes=False, hide_diagonal=False, hide_threshold=
             print(cell, end=' ')
         print()
 
+def reshape(dataset, seq_len, n_features):
+    l = dataset.shape[0]
+    return dataset.reshape((l,seq_len,n_features))
+
 def items_count(l):
     d = dict()
     for i in l:
@@ -155,12 +159,21 @@ def class_weight_count(labels):
     #print('Inverted normalized counts: '+ str(inc))
     return normalize_counts(inc)
 
-def class_weights_max_num(labels):
+def class_weights_max(labels):
     counts = items_count(labels)
     max_count = max(counts.values())
     weights = dict()
     for key,value in counts.items():
         weights[key] = max_count / counts[key]
+    return weights
+
+def class_weights_complement(labels):
+    counts = items_count(labels)
+    sum_counts = sum(counts.values())
+    weights = dict()
+    for key, value in counts.items():
+        others_counts = sum(v for k,v in counts.items() if k != key)
+        weights[key] = others_counts / sum_counts
     return weights
 
 def rfft_amp_phase(signal):

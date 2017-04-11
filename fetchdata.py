@@ -254,7 +254,7 @@ def cachedDatalabels(filenames, aggr=1, n=-1, seconds=5, sampling_period=0.002, 
         data, labels = dataLabArrays
     return data, labels
 
-def loadStratifiedDataset(filenames, aggr=1, n=-1, seconds=5, sampling_period=0.002, validation=False, transitions=False, verbose=True, cache=True):
+def loadStratifiedDataset(filenames, aggr=1, n=-1, seconds=5, sampling_period=0.002, validation=True, transitions=False, verbose=True, cache=True):
     #caching the intermediate result
     if cache:
         data, labels = cachedDatalabels(filenames,aggr,n,seconds,sampling_period,validation,transitions,verbose)

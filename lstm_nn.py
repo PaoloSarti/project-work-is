@@ -7,8 +7,8 @@ from keras.callbacks import EarlyStopping
 import numpy
 from fetchdata import loadStratifiedDataset
 from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
-from utils import print_cm, labels, class_weights_max_num
-from training import fitValidate, fitValidationSplit
+from utils import print_cm, label_names, class_weights_max, print_parameters, reshape
+from training import fitValidate, fitValidationSplit, predict_test
 import getopt
 import sys
 
@@ -82,7 +82,7 @@ for o, a in opts:
 n_classes = 3 if not transitions else 4
 length = int(seconds/(sampling_period*aggregate))
 max_length = 2*length if transitions else length
-labels = labels(n_classes)
+labels = label_names(n_classes)
 model_filename = 'weights.h5'
 
 #-----------------------------------load the dataset--------------------------------------
@@ -91,26 +91,25 @@ if load_validation:
 else:
     (X_train, y_train), (X_test, y_test) = loadStratifiedDataset(filenames, aggr=aggregate, validation=load_validation, seconds=seconds, n=nLines, transitions=transitions, verbose=verbose, cache=cache)
 
-class_weights = class_weights_max_num(y_train)
+class_weights = class_weights_max(y_train)
 
 #----------------------------------print parameters----------------------------------------
 print('Parameters:')
-print('\tsampling_period: '+str(sampling_period))
-print('\tload_validation: '+str(load_validation))
-print('\tseconds: '+str(seconds)+ ' (-1 is no limit)')
-print('\tnLines: '+str(nLines)+ ' (-1 is all of them)')
-print('\taggregate: '+ str(aggregate))
-print('\tfilenames: '+ str(filenames))
-print('\tneurons: '+ str(neurons))
-print('\ttransitions: '+ str(transitions))
-print('\tn_features (per timestamp): '+ str(n_features))
-print('\tn_classes: '+ str(n_classes))
-print('\tmax_length of the sequence: '+ str(max_length))
-print('\tmax epochs: '+ str(epochs))
-print('\tpatience: '+ str(patience))
-print('\tlearning rate: '+ str(learning_rate))
-print('\tclass_weights: '+str(class_weights))
-print('\tresume: '+str(resume))
+print_parameters('\t', sampling_period=sampling_period,
+                       load_validation=load_validation,
+                       seconds=seconds, nLines=nLines,
+                       aggregate=aggregate,
+                       filenames=filenames,
+                       neurons=neurons,
+                       transitions=transitions,
+                       n_features=n_features,
+                       n_classes=n_classes,
+                       max_length=max_length,
+                       epochs=epochs,
+                       patience=patience,
+                       learning_rate=learning_rate,
+                       class_weights=class_weights,
+                       resume=resume)
 print()
 
 #------------------------------------to categorical----------------------------------------
@@ -124,10 +123,6 @@ if load_validation:
     X_val = sequence.pad_sequences(X_val, maxlen=max_length, padding='pre', dtype='float',truncating='post',value=0.0)
 X_test = sequence.pad_sequences(X_test, maxlen=max_length, padding='pre', dtype='float',truncating='post',value=0.0)
 
-def reshape(dataset, seq_len, n_features):
-    l = dataset.shape[0]
-    return dataset.reshape((l,seq_len,n_features))
-
 #---------------------------------------Reshape-------------------------------------------
 X_train = reshape(X_train, max_length, n_features)
 if load_validation:
@@ -136,7 +131,7 @@ X_test = reshape(X_test, max_length, n_features)
 
 #---------------------------------------Model---------------------------------------------
 model = Sequential()
-model.add(GRU(neurons, input_shape=(max_length,1))) #for more layers ,return_sequences=True
+model.add(LSTM(neurons, input_shape=(max_length,n_features))) #for more layers ,return_sequences=True
 #Add layers here
 #model.add(LSTM(neurons))
 model.add(Dense(n_classes, activation='softmax'))
@@ -150,19 +145,4 @@ if load_validation:
 else:
     fitValidationSplit(model, X_train, y_train_cat, split=2/7, epochs=epochs, patience=patience)
 
-# accuracy up, loss down, at least on train.
-
-# Predict, do the confusion matrix. Precision recall and f1, scikit-learn
-# Then we assess the performance of the model with the test
-scores = model.evaluate(X_test, y_test_cat, verbose=1)
-#print(str(model.metrics_names))
-#print(str(scores))
-print("Accuracy: %.2f%%" % (scores[1]*100))
-
-y_pred = model.predict_classes(X_test)
-report = classification_report(y_test, y_pred)
-print('Report test')
-print(report)
-print('Test confusion Matrix')
-cm = confusion_matrix(y_test, y_pred)
-print_cm(cm, labels)
+predict_test(model, X_test, y_test, labels)

@@ -42,3 +42,13 @@ def fitValidate(model, X_train, y_train, X_val, y_val, labels,  model_filename, 
                 break
         i += 1
     model.load_weights(model_filename)
+
+def predict_test(model, X_test, y_test, labels):
+    y_pred = model.predict_classes(X_test)
+    report = classification_report(y_test, y_pred)
+    print()
+    print('Test classification report')
+    print(report)
+    print('Test confusion Matrix')
+    cm = confusion_matrix(y_test, y_pred)
+    print_cm(cm, labels)
