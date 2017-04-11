@@ -14,8 +14,8 @@ import sys
 filenames = ['../crunched_data/239_f.csv','../crunched_data/233_f.csv']
 learning_rate = 0.0001
 patience = 100
-n_hidden_layers = 3
-activation = 'relu'
+n_hidden_layers = 1
+activation = 'sigmoid'
 resume = False
 neurons = 20
 pad_prev = True
@@ -53,4 +53,4 @@ print(model.summary())
 
 fitValidate(model, normTrainData, trainLabelsCat, normValidData, validLabels, label_names(), 'simple_weights.h5',class_weights, patience, resume)
 
-predict_test(model, normTestData, testLabels)
+predict_test(model, normTestData, testLabels, label_names())
