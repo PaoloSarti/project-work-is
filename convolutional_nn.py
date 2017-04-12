@@ -19,7 +19,6 @@ n_filters = 8 # 16, 32
 kernel_size = 9 # Maybe.... 3 5 9 ?
 n_features = 1
 dropout_rate = 0.2 # 0.5    (reduce overfitting)
-length = int(seconds/(sampling_period*aggregate))
 patience = 100
 model_filename = 'conv_weights.h5'
 learning_rate = 0.00001
@@ -29,6 +28,8 @@ verbose = False
 n_conv_layers = 3
 neurons = 100
 transitions = True
+l = int(seconds/(sampling_period*aggregate))
+length = l if not transitions else 2 * l
 
 print('Parameters:')
 print_parameters('\t',filenames=filenames,
@@ -57,6 +58,7 @@ print_parameters('\t',filenames=filenames,
                                                                              verbose=verbose,
                                                                              cache=cache,
                                                                              transitions=transitions)
+#print(len(X_train[1]))
 class_weights = class_weights_max(y_train)
 #-----------------------------------categorical-------------------------------------------
 y_train_cat = to_categorical(y_train, num_classes=n_classes)
