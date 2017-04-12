@@ -22,12 +22,13 @@ dropout_rate = 0.2 # 0.5    (reduce overfitting)
 length = int(seconds/(sampling_period*aggregate))
 patience = 100
 model_filename = 'conv_weights.h5'
-learning_rate = 0.0001
+learning_rate = 0.00001
 labels = label_names(n_classes)
 cache = True
 verbose = False
 n_conv_layers = 3
 neurons = 100
+transitions = True
 
 print('Parameters:')
 print_parameters('\t',filenames=filenames,
@@ -54,7 +55,8 @@ print_parameters('\t',filenames=filenames,
                                                                              seconds,
                                                                              sampling_period=sampling_period,
                                                                              verbose=verbose,
-                                                                             cache=cache)
+                                                                             cache=cache,
+                                                                             transitions=transitions)
 class_weights = class_weights_max(y_train)
 #-----------------------------------categorical-------------------------------------------
 y_train_cat = to_categorical(y_train, num_classes=n_classes)

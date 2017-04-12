@@ -125,7 +125,7 @@ def reduceResolution(dataLabels, n):
         l = round(st.mean(labels))
         yield (m,l)
 
-def segmentIterator(dataLabels, n = -1, cut_until_change=True, aggr=1, transitions=False, verbose=True):
+def segmentIterator(dataLabels, n = -1, cut_until_change=True, aggr=1, transitions=False, verbose=True, change_n_classes = False):
     '''
     iterates on an iterator of couples data-label
     returns a new iterator of tuples (segment-label)
@@ -160,7 +160,10 @@ def segmentIterator(dataLabels, n = -1, cut_until_change=True, aggr=1, transitio
                     beforelist = aggregate(beforelist,aggr)
             if transitions:
                 seg = beforelist + seg
-                yieldlabel = to4Labels(beforeLabel, prevlabel)
+                if change_n_classes:
+                    yieldlabel = to4Labels(beforeLabel, prevlabel)
+                else:
+                    yieldlabel = prevlabel
             else:
                 yieldlabel = prevlabel
             yield (seg, yieldlabel)
@@ -235,15 +238,15 @@ def stratifiedTrainTest(data,labels,perc_train=0.7):
     trainData, testData, trainLabels, testLabels = train_test_split(data, labels, train_size=perc_train, stratify=labels)
     return (trainData,trainLabels), (testData, testLabels)
 
-def load_datalabels_arrays(filenames,aggr,n,seconds,sampling_period,transitions,verbose):
+def load_datalabels_arrays(filenames,aggr,n,seconds,sampling_period,transitions,verbose, change_n_classes = False):
     dataLabels = rawdataIterator(filenames, n)
     if seconds != -1:
-        segments = segmentIterator(dataLabels, n=int(seconds/sampling_period),aggr=aggr, transitions=transitions, verbose=verbose)
+        segments = segmentIterator(dataLabels, n=int(seconds/sampling_period),aggr=aggr, transitions=transitions, verbose=verbose, change_n_classes=change_n_classes)
     else:
-        segments = segmentIterator(dataLabels, cut_until_change=False, n=-1,aggr=aggr, transitions=transitions, verbose=verbose)
+        segments = segmentIterator(dataLabels, cut_until_change=False, n=-1,aggr=aggr, transitions=transitions, verbose=verbose, change_n_classes=change_n_classes)
     return dataLabelsArrays(segments)
 
-def cachedDatalabels(filenames, aggr=1, n=-1, seconds=5, sampling_period=0.002, validation=False, transitions=False, verbose=True):
+def cachedDatalabels(filenames, aggr=1, n=-1, seconds=5, sampling_period=0.002, validation=False, transitions=False, verbose=True, change_n_classes= False):
     dumpedfilename = 'cache' + '_a'+str(aggr)+'_n'+str(n)+'_s'+str(seconds)
     fnhash = hashlib.sha224(''.join(filenames).encode()).hexdigest()[:8]
     dumpedfilename += '_f' +fnhash
@@ -253,18 +256,18 @@ def cachedDatalabels(filenames, aggr=1, n=-1, seconds=5, sampling_period=0.002, 
         with open(dumpedfilename) as df:
             data, labels = json.load(df)
     else:
-        dataLabArrays = load_datalabels_arrays(filenames,aggr,n,seconds,sampling_period,transitions,verbose)
+        dataLabArrays = load_datalabels_arrays(filenames,aggr,n,seconds,sampling_period,transitions,verbose, change_n_classes)
         with open(dumpedfilename, 'w') as df:
             json.dump(dataLabArrays,df)
         data, labels = dataLabArrays
     return data, labels
 
-def loadStratifiedDataset(filenames, aggr=1, n=-1, seconds=5, sampling_period=0.002, validation=True, transitions=False, verbose=True, cache=True):
+def loadStratifiedDataset(filenames, aggr=1, n=-1, seconds=5, sampling_period=0.002, validation=True, transitions=False, verbose=True, cache=True,change_n_classes=False):
     #caching the intermediate result
     if cache:
-        data, labels = cachedDatalabels(filenames,aggr,n,seconds,sampling_period,validation,transitions,verbose)
+        data, labels = cachedDatalabels(filenames,aggr,n,seconds,sampling_period,validation,transitions,verbose,change_n_classes)
     else:
-        data, labels = load_datalabels_arrays(filenames,aggr,n,seconds,sampling_period,transitions,verbose)
+        data, labels = load_datalabels_arrays(filenames,aggr,n,seconds,sampling_period,transitions,verbose,change_n_classes)
     if validation:
         (trainData,trainLabels), (validateData, validateLabels), (testData, testLabels) = stratifiedTrainValidTest(data, labels)
         ma, mi = maxMinSegments(trainData)
