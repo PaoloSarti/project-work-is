@@ -265,23 +265,6 @@ def loadStratifiedDataset(filenames, aggr=1, n=-1, seconds=5, sampling_period=0.
         data, labels = cachedDatalabels(filenames,aggr,n,seconds,sampling_period,validation,transitions,verbose)
     else:
         data, labels = load_datalabels_arrays(filenames,aggr,n,seconds,sampling_period,transitions,verbose)
-
-    dumpedfilename = 'cache' + '_a'+str(aggr)+'_n'+str(n)+'_s'+str(seconds)
-    dumpedfilename = dumpedfilename + '_t.json' if transitions else dumpedfilename + '.json'
-    data, labels = [], []
-    if path.isfile(dumpedfilename):
-        with open(dumpedfilename) as df:
-            data, labels = json.load(df)
-    else:
-        dataLabels = rawdataIterator(filenames, n)
-        if seconds != -1:
-            segments = segmentIterator(dataLabels, n=int(seconds/sampling_period),aggr=aggr, transitions=transitions, verbose=verbose)
-        else:
-            segments = segmentIterator(dataLabels, cut_until_change=False, n=-1,aggr=aggr, transitions=transitions, verbose=verbose)
-        dataLabArrays = dataLabelsArrays(segments)
-        with open(dumpedfilename, 'w') as df:
-            json.dump(dataLabArrays,df)
-        data, labels = dataLabArrays
     if validation:
         (trainData,trainLabels), (validateData, validateLabels), (testData, testLabels) = stratifiedTrainValidTest(data, labels)
         ma, mi = maxMinSegments(trainData)
