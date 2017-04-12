@@ -1,4 +1,5 @@
 from sklearn import tree
+#from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import precision_recall_fscore_support
 from sklearn.metrics import accuracy_score
@@ -21,9 +22,9 @@ print_parameters('\t', filenames=filenames, criterion=crit, min_samples_split=mi
 
 (trainData,trainLabels), (testData, testLabels) = load_cols_train_test(filenames, perc_train=0.8, pad_prev=False) #load_segment_statistics_train_test(filenames, perc_train=0.8)
 
-classifier = tree.DecisionTreeClassifier(criterion='gini',#entrpy
-                                         min_samples_split=min_split,
-                                         max_depth=max_depth)
+#classifier = tree.DecisionTreeClassifier(criterion='gini',min_samples_split=min_split,max_depth=max_depth)
+
+#classifier = RandomForestClassifier(n_estimators=50)
 
 #print(trainData[0])
 
@@ -52,5 +53,5 @@ def print_pdf(classifier, filename, csv_filename):
     graph = pydotplus.graph_from_dot_data(dot_data) 
     graph.write_pdf(filename)
 
-print_pdf(classifier,pdffile, filenames[0])
+#print_pdf(classifier,pdffile, filenames[0])
 #tree.export_graphviz(classifier,out_file=dotfile)
