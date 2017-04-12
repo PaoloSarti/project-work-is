@@ -11,21 +11,23 @@ import numpy as np
 
 filenames = ['../SleepEEG/rt 233_180511(1).txt','../SleepEEG/rt 233_180511(2).txt', '../SleepEEG/rt 239_310511(1).txt', '../SleepEEG/rt 239_310511(2).txt' ]
 nLines = -1
-seconds = 5
+seconds = 10
 n_classes = 3
 aggregate = 5
 sampling_period = 0.002
 n_filters = 8 # 16, 32
-kernel_size = 7 # Maybe.... 3 5 ?
+kernel_size = 9 # Maybe.... 3 5 9 ?
 n_features = 1
 dropout_rate = 0.2 # 0.5    (reduce overfitting)
 length = int(seconds/(sampling_period*aggregate))
-patience = 100
+patience = 5
 model_filename = 'conv_weights.h5'
-learning_rate = 0.00001
+learning_rate = 0.0001
 labels = label_names(n_classes)
 cache = True
 verbose = False
+n_conv_layers = 3
+neurons = 100
 
 print('Parameters:')
 print_parameters('\t',filenames=filenames,
@@ -69,18 +71,21 @@ X_test = reshape(X_test, length, n_features)
 print('X_train shape: '+str(X_train.shape))
 #---------------------------------------Model---------------------------------------------
 model = Sequential()
-model.add(Conv1D(n_filters, kernel_size, activation='relu', input_shape=(length,n_features)))
-model.add(MaxPool1D())
-model.add(BatchNormalization())
-model.add(Dropout(dropout_rate))
+#model.add(Conv1D(n_filters, kernel_size, activation='relu', input_shape=(length,n_features)))
 
-model.add(Conv1D(n_filters, kernel_size, activation='relu'))
-model.add(MaxPool1D())
-model.add(BatchNormalization())
-model.add(Dropout(dropout_rate))
+for i in range(n_conv_layers):
+    if i == 0:
+        model.add(Conv1D(n_filters, kernel_size, activation='relu', input_shape=(length,n_features)))
+    else:
+        model.add(Conv1D(n_filters, kernel_size, activation='relu'))
+    model.add(MaxPool1D())
+    model.add(BatchNormalization())
+    model.add(Dropout(dropout_rate))
 
+#------------------------------------Dense nn--- -----------------------------------------
 model.add(Flatten())
-model.add(Dense(250, activation='sigmoid'))
+model.add(Dense(neurons, activation='sigmoid'))
+model.add(Dropout(dropout_rate))
 model.add(Dense(n_classes, activation='softmax'))
 model.compile(loss='categorical_crossentropy', optimizer=RMSprop(lr=learning_rate), metrics=['categorical_accuracy'])
 print(model.summary())
