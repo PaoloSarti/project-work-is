@@ -22,7 +22,7 @@ print_parameters('\t', filenames=filenames, criterion=crit, min_samples_split=mi
 
 (trainData,trainLabels), (testData, testLabels) = load_cols_train_test(filenames, perc_train=0.8, pad_prev=False) #load_segment_statistics_train_test(filenames, perc_train=0.8)
 
-#classifier = tree.DecisionTreeClassifier(criterion='gini',min_samples_split=min_split,max_depth=max_depth)
+classifier = tree.DecisionTreeClassifier(criterion='gini',min_samples_split=min_split,max_depth=max_depth)
 
 #classifier = RandomForestClassifier(n_estimators=50)
 
