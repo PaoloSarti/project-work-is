@@ -16,8 +16,12 @@ from utils import rfft_amp_phase, plot_amp_phase, join_args
 # fix random seed for reproducibility
 np.random.seed(7)
 
-def csv_headers_freq():
-    return ['SegmentLength','SegmentMin','SegmentMax','SegmentAvg','SegmentStdDev','FreqAmplMin','FreqAmplMax','FreqAmplAvg','FreqAmplStdev']
+def csv_attributes(filename, delim=','):
+    with open(filename) as f:
+        reader = csv.DictReader(f, delimiter=delim)
+        fieldnames = reader.fieldnames
+        l = len(fieldnames)
+        return fieldnames[:l-1]
 
 def rawdata(filenames, n=-1):
     data = []
@@ -63,6 +67,7 @@ def load_cols_labels(filenames,cols=None,label=None,delim=','):
             l = len(reader.fieldnames)
             if cols == None:
                 cols = reader.fieldnames[:l-1]
+                #print(str(cols))
             if label == None:
                 label = reader.fieldnames[l-1]
             for row in reader:
