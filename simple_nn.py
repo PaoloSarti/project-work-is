@@ -13,7 +13,7 @@ import sys
 
 filenames = ['../crunched_data/239_f.csv','../crunched_data/233_f.csv']
 learning_rate = 0.0001
-patience = 100
+patience = 1000
 n_hidden_layers = 1
 activation = 'sigmoid'
 resume = False
@@ -48,7 +48,7 @@ model.add(Dense(3, activation='softmax'))
 
 model.compile(optimizer=RMSprop(lr=learning_rate),
               loss='categorical_crossentropy',
-              metrics=['accuracy'])
+              metrics=['categorical_accuracy'])
 print(model.summary())
 
 fitValidate(model, normTrainData, trainLabelsCat, normValidData, validLabels, label_names(), 'simple_weights.h5',class_weights, patience, resume)

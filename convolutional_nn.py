@@ -19,13 +19,13 @@ n_filters = 8 # 16, 32
 kernel_size = 9 # Maybe.... 3 5 9 ?
 n_features = 1
 dropout_rate = 0.2 # 0.2    (reduce overfitting)
-patience = 50
+patience = 200
 model_filename = 'conv_weights.h5'
 learning_rate = 0.00001
 labels = label_names(n_classes)
 cache = True
 verbose = False
-n_conv_layers = 1
+n_conv_layers = 3
 neurons = 100
 transitions = True
 l = int(seconds/(sampling_period*aggregate))
@@ -41,13 +41,13 @@ print_parameters('\t',filenames=filenames,
                       kernel_size=kernel_size,
                       n_features=n_features,
                       dropout_rate=dropout_rate,
-                      length=length,
                       patience=patience,
                       model_filename=model_filename,
                       learning_rate=learning_rate,
                       labels=labels,
                       cache=cache,
-                      verbose=verbose)
+                      verbose=verbose,
+                      transitions=transitions)
 
 #------------------------------------Load the data----------------------------------------
 (X_train, y_train), (X_val, y_val), (X_test, y_test) = loadStratifiedDataset(filenames,
@@ -58,8 +58,10 @@ print_parameters('\t',filenames=filenames,
                                                                              verbose=verbose,
                                                                              cache=cache,
                                                                              transitions=transitions)
-#print(len(X_train[1]))
+
+length = len(X_train[0])
 class_weights = class_weights_max(y_train)
+print_parameters('\t', length=length, class_weights=class_weights)
 #-----------------------------------categorical-------------------------------------------
 y_train_cat = to_categorical(y_train, num_classes=n_classes)
 
