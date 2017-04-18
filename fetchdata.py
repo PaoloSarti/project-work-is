@@ -378,7 +378,7 @@ def printCsvSegmentsFreq(filenames, n):
         avg = st.mean(seg)
         stdev = st.pstdev(seg,avg)
         a,p = rfft_amp_phase(seg)
-        a = a[2:] #throw away freq 0
+        a = a[1:] #throw away freq 0
         fami = min(a)
         fama = max(a)
         faav = st.mean(a)
@@ -405,13 +405,16 @@ def visualizeSeconds(filenames, n=-1, res=1, seconds=-1):
 
 def visualizeSecondsAmpPhase(filenames, n=-1, aggr=1, seconds=-1):
     dataLabels = rawdataIterator(filenames, n)
-    segmentsLabels = segmentIterator(dataLabels,int(seconds/(0.002)),cut_until_change=True,aggr=aggr)
+    if seconds == -1:
+        segmentsLabels = segmentIterator(dataLabels,n,cut_until_change=True,aggr=aggr)
+    else:
+        segmentsLabels = segmentIterator(dataLabels,int(seconds/(0.002)),cut_until_change=True,aggr=aggr)
     for (seg, label) in segmentsLabels:
         print('Label: ' + str(label))
         print('Lenght of segment: '+str(len(seg)))
         #nseg = normalize(seg)
         a,p = rfft_amp_phase(seg)
-        a, p = a, p       #throw away the freq 0
+        a, p = a[1:], p[1:]       #throw away the freq 0
         print('Length of ft: '+str(len(a)))
         print('Mean amplitude: '+ str(st.mean(a)))
         print('Stdev amplitude: '+ str(st.stdev(a)))
@@ -455,8 +458,8 @@ def main():
     #printCsvSegmentsReduceRes([filename,filename1],n, r)
     #visualizeResReduction(filenames,n,r)
     #visualizeSeconds(filenames,n,r,seconds)
-    #visualizeSecondsAmpPhase(filenames, n, r, seconds)
-    printCsvSegmentsFreq(filenames,n)
+    visualizeSecondsAmpPhase(filenames, n, r, seconds)
+    #printCsvSegmentsFreq(filenames,n)
 
 if __name__ == '__main__':
     main()
