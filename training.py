@@ -15,12 +15,14 @@ def fitValidate(model, X_train, y_train, X_val, y_val, labels,  model_filename, 
     while True:
         hist = model.fit(X_train, y_train, verbose=2, epochs=1, class_weight=class_weights)
         loss = hist.history['loss'][0]
+        train_accuracy = hist.history['categorical_accuracy'][0]
         y_pred = model.predict_classes(X_val)
         accuracy = accuracy_score(y_val, y_pred)
         report = classification_report(y_val, y_pred)
-        print('\nReport at epoch '+str(i))
+        print('\n\nReport at epoch '+str(i))
         print('Loss: ' + str(loss))
-        print('Accuracy on validation at epoch ' + str(i) + ': '+str(accuracy))
+        print('Train accuracy: '+ str(train_accuracy))
+        print('Validation accuracy: '+str(accuracy))
         print(report)
         cm = confusion_matrix(y_val, y_pred)
         print('Confusion matrix')
@@ -29,16 +31,17 @@ def fitValidate(model, X_train, y_train, X_val, y_val, labels,  model_filename, 
             prev_accuracy = accuracy
             #Save the model with the best accuracy on the validation set
             model.save_weights(model_filename)
-        if prev_loss == -1:
-            prev_loss = loss
-        elif loss < prev_loss:
-            prev_loss = loss
             patience_count = 0
+        #if prev_loss == -1:
+        #    prev_loss = loss
+        #elif loss < prev_loss:
+        #    prev_loss = loss
+        #    patience_count = 0
         else:
             patience_count += 1
             print('\nPatience count: '+str(patience_count)+'/'+str(patience))
             if patience_count == patience:
-                print('Loss stopped decreasing')
+                print('Accuracy on validation stopped decreasing') #loss
                 break
         i += 1
     model.load_weights(model_filename)
