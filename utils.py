@@ -5,6 +5,7 @@ from os import path
 import json
 import math
 from matplotlib import pyplot as plt
+from scipy.signal import butter, lfilter
 
 def aggregate(array, n=1, fn=st.mean):
     i = 0
@@ -196,3 +197,16 @@ def plot_amp_phase(amp, phase):
 
 def join_args(sep, *args):
     return sep.join(str(i) for i in args)
+
+# From Butterworth bandpass recipe
+def butter_bandpass(lowcut, highcut, fs, order=5):
+    nyq = 0.5 * fs
+    low = lowcut / nyq
+    high = highcut / nyq
+    b, a = butter(order, [low, high], btype='band')
+    return b, a
+
+def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
+    b, a = butter_bandpass(lowcut, highcut, fs, order=order)
+    y = lfilter(b, a, data)
+    return y
