@@ -8,7 +8,6 @@ from utils import reshape, class_weights_max, label_names, print_parameters
 from training import fitValidate, predict_test
 import numpy as np
 
-
 filenames = ['../SleepEEG/rt 233_180511(1).txt','../SleepEEG/rt 233_180511(2).txt', '../SleepEEG/rt 239_310511(1).txt', '../SleepEEG/rt 239_310511(2).txt' ]
 nLines = -1
 seconds = 10
@@ -16,9 +15,9 @@ n_classes = 3
 aggregate = 5
 sampling_period = 0.002
 n_filters = 8 # 16, 32
-kernel_size = 9 # Maybe.... 3 5 9 ?
+kernel_size = 9 # Maybe... 3 5 7 9 ?
 n_features = 1
-dropout_rate = 0.2 # 0.2    (reduce overfitting)
+dropout_rate = 0.2 # 0.5    (reduce overfitting)
 patience = 200
 model_filename = 'conv_weights.h5'
 learning_rate = 0.00001
@@ -28,8 +27,8 @@ verbose = False
 n_conv_layers = 3
 neurons = 100
 transitions = True
-l = int(seconds/(sampling_period*aggregate))
-length = l if not transitions else 2 * l
+#l = int(seconds/(sampling_period*aggregate))
+#length = l if not transitions else 2 * l
 
 print('Parameters:')
 print_parameters('\t',filenames=filenames,
@@ -88,7 +87,7 @@ for i in range(n_conv_layers):
     model.add(BatchNormalization())
     model.add(Dropout(dropout_rate))
 
-#------------------------------------Dense nn--- -----------------------------------------
+#------------------------------------Dense nn---------------------------------------------
 model.add(Flatten())
 #model.add(Dense(neurons, activation='sigmoid'))
 #model.add(Dropout(dropout_rate))

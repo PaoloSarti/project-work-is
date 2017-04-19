@@ -14,8 +14,8 @@ import sys
 filenames = ['../crunched_data/239_f.csv','../crunched_data/233_f.csv']
 learning_rate = 0.0001
 patience = 1000
-n_hidden_layers = 1
-activation = 'sigmoid'
+n_hidden_layers = 3
+activation = 'relu'
 resume = False
 neurons = 20
 pad_prev = True
