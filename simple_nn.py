@@ -17,8 +17,9 @@ patience = 1000
 n_hidden_layers = 3
 activation = 'relu'
 resume = False
-neurons = 20
+neurons = 10
 pad_prev = True
+neurons = 2 * neurons if pad_prev else neurons
 
 #(trainData,trainLabels), (testData, testLabels) = load_segment_statistics_train_test(filenames, perc_train=0.8)
 #load_segment_statistics_train_valid_test(filenames, perc_train=0.7, perc_valid=0.1)
@@ -27,7 +28,7 @@ pad_prev = True
 class_weights = class_weights_max(trainLabels)
 
 print('Parameters')
-print_parameters('\t', filenames=filenames, learning_rate=learning_rate, patience=patience, class_weights=class_weights, resume=resume, pad_prev=pad_prev)
+print_parameters('\t', filenames=filenames, learning_rate=learning_rate, patience=patience, class_weights=class_weights, resume=resume, pad_prev=pad_prev, neurons=neurons)
 
 #categorical
 trainLabelsCat = to_categorical(trainLabels,num_classes=3)
