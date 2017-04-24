@@ -1,6 +1,10 @@
 from keras.callbacks import EarlyStopping
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 from utils import print_cm
+from sklearn.model_selection import StratifiedKFold, train_test_split
+from keras.utils.np_utils import to_categorical
+import statistics as st
+import numpy as np
 
 def fitValidationSplit(model, X_train, y_train, split=2/7, epochs=1000, patience=10):
     model.fit(X_train, y_train, validation_split=split, verbose=2, epochs=epochs, callbacks=[EarlyStopping(monitor='loss', patience=100)]) #categorical_accuracy
@@ -44,6 +48,9 @@ def fitValidate(model, X_train, y_train, X_val, y_val, labels,  model_filename, 
                 print('Accuracy on validation stopped decreasing') #loss
                 break
         i += 1
+        if train_accuracy >= 0.99:
+            print('Maximum train accuracy reached...')
+            break
     model.load_weights(model_filename)
 
 def predict_test(model, X_test, y_test, labels):
@@ -55,3 +62,25 @@ def predict_test(model, X_test, y_test, labels):
     print('Test confusion Matrix')
     cm = confusion_matrix(y_test, y_pred)
     print_cm(cm, labels)
+    return accuracy_score(y_test, y_pred)
+
+def cross_validation_acc(model, X_data, y_data, labels, model_filename, class_weights, fn_x=lambda x:x, patience = 10, n_splits = 3, resume = False, train_size=5/7):
+    skf = StratifiedKFold(n_splits = n_splits)
+    best_accuracy = 0
+    accuracies = []
+    model_filename_best = 'cross_'+model_filename
+    for train_index, test_index in skf.split(X_data, y_data):
+        X_data, y_data = np.array(X_data), np.array(y_data)
+        X_train, X_test = X_data[train_index], X_data[test_index]
+        y_train, y_test = y_data[train_index], y_data[test_index]
+        X_train, X_valid, y_train, y_valid = train_test_split(X_train, y_train, train_size=train_size)
+        X_train, X_valid, X_test = fn_x(X_train), fn_x(X_valid), fn_x(X_test)
+        y_train = to_categorical(y_train, num_classes=len(labels))
+        fitValidate(model, X_train, y_train, X_valid, y_valid, labels, model_filename, class_weights, patience, resume)
+        accuracy = predict_test(model, X_test, y_test, labels)
+        accuracies.append(accuracy)
+        if accuracy > best_accuracy:
+            model.save_weights(model_filename_best)
+            best_accuracy = accuracy
+    model.load_weights(model_filename_best)
+    return st.mean(accuracies)

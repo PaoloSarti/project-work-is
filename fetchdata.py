@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 import statistics as st
 import random
 from sklearn.model_selection import train_test_split
-from utils import aggregate, normalize, to4Labels
+from utils import aggregate, normalize, to4Labels, max_ampl_freq
 from collections import deque
 import json
 from os import path
@@ -22,21 +22,6 @@ def csv_attributes(filename, delim=','):
         fieldnames = reader.fieldnames
         l = len(fieldnames)
         return fieldnames[:l-1]
-
-def rawdata(filenames, n=-1):
-    data = []
-    labels = []
-    i = 0
-    for filename in filenames:
-        with open(filename) as f:
-            reader = csv.DictReader(f, delimiter='\t')
-            for row in reader:
-                data.append(float(row['1 EEG']))
-                labels.append(int(float(row['10 Hypnogm'])))
-                i += 1
-                if i == n:
-                    break
-    return data, labels
 
 def rawdataIterator(filenames, n=-1, delim='\t'):
     """
@@ -85,24 +70,6 @@ def pad_previous(data, labels):
         prev = data[i]
     return padded_data, padded_labels
 
-def load_segment_statistics(filenames, delim=','):
-    data = []
-    labels = []
-    for filename in filenames:
-        with open(filename) as f:
-            reader = csv.DictReader(f, delimiter=delim)
-            for row in reader:
-                #print(str(row))
-                instance = []
-                instance.append(float(row['SegmentLength']))
-                instance.append(float(row['SegmentMin']))
-                instance.append(float(row['SegmentMax']))
-                instance.append(float(row['SegmentAvg']))
-                instance.append(float(row['SegmentStdDev']))
-                data.append(instance)
-                labels.append(int(row['Label']))
-    return data, labels
-
 def reduceResolution(dataLabels, n):
     i = 0
     toAggregate = []
@@ -128,7 +95,7 @@ def reduceResolution(dataLabels, n):
 def segmentIterator(dataLabels, n = -1, cut_until_change=True, aggr=1, transitions=False, verbose=True, change_n_classes = False):
     '''
     iterates on an iterator of couples data-label
-    returns a new iterator of tuples (segment-label)
+    returns a new iterator of tuples (segment-label).
     a limit in size of the segments can be specified
     '''
     prevlabel = -1
@@ -214,24 +181,18 @@ def stratifiedTrainValidTest(data, labels, perc_train=0.5, perc_valid=0.2):
     print('test length: '+str(len(testData))+' '+str(len(testLabels)))
     return (trainData,trainLabels), (validateData, validateLabels), (testData, testLabels)
 
-def load_segment_statistics_train_test(filenames, perc_train=0.7):
-    data, labels = load_segment_statistics(filenames)
-    return stratifiedTrainTest(data, labels, perc_train)
-
-def load_segment_statistics_train_valid_test(filenames,  perc_train=0.5, perc_valid=0.2):
-    data, labels = load_segment_statistics(filenames)
-    return stratifiedTrainValidTest(data, labels, perc_train, perc_valid)
-
-def load_cols_train_test(filenames, perc_train=0.7, pad_prev=True):
+def load_cols(filenames, pad_prev=True):
     data, labels = load_cols_labels(filenames)
     if pad_prev:
         data, labels = pad_previous(data, labels)
+    return data, labels
+
+def load_cols_train_test(filenames, perc_train=0.7, pad_prev=True):
+    data, labels = load_cols(filenames, pad_prev)
     return stratifiedTrainTest(data, labels, perc_train)
 
 def load_cols_train_valid_test(filenames, perc_train=0.5, perc_valid=0.2, pad_prev=True):
-    data, labels = load_cols_labels(filenames)
-    if pad_prev:
-        data, labels = pad_previous(data, labels)
+    data, labels = load_cols(filenames, pad_prev)
     return stratifiedTrainValidTest(data, labels, perc_train, perc_valid)
 
 def stratifiedTrainTest(data,labels,perc_train=0.7):
@@ -338,21 +299,6 @@ def segmentWithLabelAndLength(data, labels, n):
 
 #--------------------------------Tests-------------------------------
 
-def printCsvSegments(filenames, n):
-    data, labels = rawdata(filenames, n)
-    dl, ll = segment(data, labels)
-    length = len(ll)
-    print('SegmentLength,Label')
-    for i in range(length):
-        print(str(len(dl[i])) + ',' + str(ll[i]))
-
-def printCsvSegmentsIterator(filenames, n):
-    dataLabels = rawdataIterator(filenames,n)
-    segments = segmentIterator(dataLabels)
-    print('SegmentLength,Label')
-    for (seg,label) in segments:
-        print(str(len(seg)) + ',' + str(label))
-
 def printCsvSegmentsReduceRes(filenames, n, r):
     dataLabels = rawdataIterator(filenames,n)
     if r != 1:
@@ -382,7 +328,7 @@ def printCsvSegmentsFreq(filenames, n):
         fami = min(a)
         fama = max(a)
         faav = st.mean(a)
-        fasd = st.stdev(a)
+        fasd = st.pstdev(a)
         print(join_args(',',l, mi, ma, avg, stdev, fami, fama, faav, fasd, label))
         #print(str(l) + ',' + str(mi) + ',' + str(ma) + ',' + str(avg) + ',' + str(stdev) +',' +str(fami)+','+str(fama)+','+str(faav)+','+str(fasd)+','+str(label))
 

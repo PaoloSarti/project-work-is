@@ -30,11 +30,10 @@ def normalize(l, mi=-1, ma=-1):
         mi = min(l)
     if ma == -1:
         ma = max(l)
-    n = []
-    for d in l:
-        if ma - mi != 0:
-            n.append((d - mi)/(ma - mi))
-    return n
+    if ma == mi:
+        return [0 for i in l]
+    else:
+        return [(d - mi)/(ma - mi) for d in l]
 
 def normalizeColumns(data):
     npdata = np.array(data)
@@ -210,3 +209,13 @@ def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
     b, a = butter_bandpass(lowcut, highcut, fs, order=order)
     y = lfilter(b, a, data)
     return y
+
+def max_ampl_freq(amp, ignore_first = True):
+    m = -1
+    j = -1
+    start = 1 if ignore_first else 0
+    for i in range(start, len(amp)):
+        if amp[i] > m:
+            m = amp[i]
+            j = i
+    return j
