@@ -9,7 +9,7 @@ import numpy as np
 def fitValidationSplit(model, X_train, y_train, split=2/7, epochs=1000, patience=10):
     model.fit(X_train, y_train, validation_split=split, verbose=2, epochs=epochs, callbacks=[EarlyStopping(monitor='loss', patience=100)]) #categorical_accuracy
 
-def fitValidate(model, X_train, y_train, X_val, y_val, labels,  model_filename, class_weights, patience=10, resume=False):
+def fitValidate(model, X_train, y_train, X_val, y_val, labels,  model_filename, class_weights, patience=10, resume=False, max_train_accuracy=0.98):
     prev_accuracy = -1
     patience_count = 0
     prev_loss = -1
@@ -36,11 +36,6 @@ def fitValidate(model, X_train, y_train, X_val, y_val, labels,  model_filename, 
             #Save the model with the best accuracy on the validation set
             model.save_weights(model_filename)
             patience_count = 0
-        #if prev_loss == -1:
-        #    prev_loss = loss
-        #elif loss < prev_loss:
-        #    prev_loss = loss
-        #    patience_count = 0
         else:
             patience_count += 1
             print('\nPatience count: '+str(patience_count)+'/'+str(patience))
@@ -48,7 +43,7 @@ def fitValidate(model, X_train, y_train, X_val, y_val, labels,  model_filename, 
                 print('Accuracy on validation stopped decreasing') #loss
                 break
         i += 1
-        if train_accuracy >= 0.99:
+        if train_accuracy >= max_train_accuracy:
             print('Maximum train accuracy reached...')
             break
     model.load_weights(model_filename)

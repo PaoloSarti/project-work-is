@@ -14,7 +14,7 @@ seconds = 10
 n_classes = 3
 aggregate = 5
 sampling_period = 0.002
-n_filters = 8 # 16, 32
+n_filters = 16 # 16, 32
 kernel_size = 9 # Maybe... 3 5 7 9 ?
 n_features = 1
 dropout_rate = 0.2 # 0.5    (reduce overfitting)
@@ -25,7 +25,6 @@ labels = label_names(n_classes)
 cache = True
 verbose = False
 n_conv_layers = 3
-#neurons = 100
 transitions = True
 crossvalidate = False
 compare_individuals = True
@@ -99,9 +98,9 @@ model = Sequential()
 
 for i in range(n_conv_layers):
     if i == 0:
-        model.add(Conv1D(n_filters, int(kernel_size/(pool_size**i)), activation='relu', input_shape=(length,n_features)))
+        model.add(Conv1D(n_filters, kernel_size, activation='relu', input_shape=(length,n_features)))
     else:
-        model.add(Conv1D(n_filters, int(kernel_size/(pool_size**i)), activation='relu'))
+        model.add(Conv1D(n_filters, kernel_size, activation='relu'))
     model.add(MaxPool1D(pool_size))
     model.add(BatchNormalization())
     model.add(Dropout(dropout_rate))
