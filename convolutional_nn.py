@@ -2,11 +2,11 @@ from keras.models import Sequential
 from keras.layers import Dense, Conv1D, MaxPool1D, BatchNormalization, Dropout, Flatten
 from keras.utils.np_utils import to_categorical
 from keras.optimizers import RMSprop
-from keras.preprocessing import sequence
 from fetchdata import loadStratifiedDataset, cachedDatalabels
-from utils import reshape, class_weights_max, label_names, print_parameters
-from training import fitValidate, predict_test, cross_validation_acc
+from utils import class_weights_max, label_names, print_parameters
+from training import fitValidate, predict_test, cross_validation_acc, pad_reshape
 import numpy as np
+import functools
 
 filenames = ['../SleepEEG/rt 233_180511(1).txt','../SleepEEG/rt 233_180511(2).txt', '../SleepEEG/rt 239_310511(1).txt', '../SleepEEG/rt 239_310511(2).txt' ]
 nLines = -1
@@ -50,7 +50,8 @@ print_parameters('\t',filenames=filenames,
                       cache=cache,
                       verbose=verbose,
                       transitions=transitions,
-                      compare_individuals=compare_individuals)
+                      compare_individuals=compare_individuals,
+                      crossvalidate=crossvalidate)
 
 #------------------------------------Load the data----------------------------------------
 if crossvalidate:
@@ -111,26 +112,17 @@ model.add(Dense(n_classes, activation='softmax'))
 model.compile(loss='categorical_crossentropy', optimizer=RMSprop(lr=learning_rate), metrics=['categorical_accuracy'])
 print(model.summary())
 
-def pad_reshape(data, length, n_features):
-    ret_data = sequence.pad_sequences(data, maxlen=length, padding='pre', dtype='float', truncating='post', value=0.0)
-    return reshape(data, length, n_features)
+prepare_data = functools.partial(pad_reshape, length=length, n_features=n_features)
 
 if crossvalidate:
-    #X_data = sequence.pad_sequences(X_data, maxlen=length, padding='pre', dtype='float', truncating='post', value=0.0)
-    #X_data = reshape(X_data, length, n_features)
-    acc = cross_validation_acc(model, X_data, y_data, labels, model_filename, class_weights, lambda x: pad_reshape(x, length, n_features), patience, n_splits = 5)
+    acc = cross_validation_acc(model, X_data, y_data, labels, model_filename, class_weights, prepare_data, patience, n_splits = 5)
     print('Cross validated accuracy: '+str(acc))
 else:
     #-----------------------------------categorical-------------------------------------------
     y_train_cat = to_categorical(y_train, num_classes=n_classes)
-    #--------------------------------------truncate-------------------------------------------
-    X_train = sequence.pad_sequences(X_train, maxlen=length, padding='pre', dtype='float',truncating='post',value=0.0)
-    X_val = sequence.pad_sequences(X_val, maxlen=length, padding='pre', dtype='float',truncating='post',value=0.0)
-    X_test = sequence.pad_sequences(X_test, maxlen=length, padding='pre', dtype='float',truncating='post',value=0.0)
-    #--------------------------------------reshape--------------------------------------------
-    X_train = reshape(X_train, length, n_features)
-    X_val = reshape(X_val, length, n_features)
-    X_test = reshape(X_test, length, n_features)
-    print('X_train shape: '+str(X_train.shape))
+    #-----------------------------------prepare data------------------------------------------
+    X_train = prepare_data(X_train)
+    X_val = prepare_data(X_val)
+    X_test = prepare_data(X_test)
     fitValidate(model, X_train, y_train_cat, X_val, y_val, labels, model_filename, class_weights, patience)
     predict_test(model, X_test, y_test, labels)

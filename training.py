@@ -2,7 +2,8 @@ from keras.callbacks import EarlyStopping
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 from utils import print_cm
 from sklearn.model_selection import StratifiedKFold, train_test_split
-from keras.utils.np_utils import to_categorical
+from keras.utils.np_utils import to_categorical, reshape
+from keras.preprocessing import sequence
 import statistics as st
 import numpy as np
 
@@ -58,6 +59,10 @@ def predict_test(model, X_test, y_test, labels):
     cm = confusion_matrix(y_test, y_pred)
     print_cm(cm, labels)
     return accuracy_score(y_test, y_pred)
+
+def pad_reshape(data, length, n_features):
+    ret_data = sequence.pad_sequences(data, maxlen=length, padding='pre', dtype='float', truncating='post', value=0.0)
+    return reshape(ret_data, length, n_features)
 
 def cross_validation_acc(model, X_data, y_data, labels, model_filename, class_weights, fn_x=lambda x:x, patience = 10, n_splits = 3, resume = False, train_size=5/7):
     skf = StratifiedKFold(n_splits = n_splits)
