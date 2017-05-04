@@ -14,10 +14,10 @@ pdffile = '233_239.pdf'
 dotfile = '239_tree.dot'
 labels = ['Awake','Nrem','Rem']
 crit = 'gini'
-min_split = 20
-max_depth = 4
-test_individuals = True
-pad_prev = False
+min_split = 10
+max_depth = 5
+test_individuals = False
+pad_prev = True
 
 print('Parameters')
 print_parameters('\t', filenames=filenames, criterion=crit, min_samples_split=min_split, max_depth=max_depth)

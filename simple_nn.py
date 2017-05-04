@@ -20,7 +20,7 @@ resume = False
 neurons = 20
 pad_prev = True
 neurons = 2 * neurons if pad_prev else neurons
-compare_individuals = True
+compare_individuals = False
 
 #(trainData,trainLabels), (testData, testLabels) = load_segment_statistics_train_test(filenames, perc_train=0.8)
 #load_segment_statistics_train_valid_test(filenames, perc_train=0.7, perc_valid=0.1)

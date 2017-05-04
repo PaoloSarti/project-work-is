@@ -1,8 +1,8 @@
 from keras.callbacks import EarlyStopping
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
-from utils import print_cm
+from utils import print_cm, reshape
 from sklearn.model_selection import StratifiedKFold, train_test_split
-from keras.utils.np_utils import to_categorical, reshape
+from keras.utils.np_utils import to_categorical
 from keras.preprocessing import sequence
 import statistics as st
 import numpy as np
