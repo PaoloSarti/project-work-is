@@ -11,17 +11,19 @@ from collections import deque
 import json
 from os import path
 import hashlib
-from utils import rfft_amp_phase, plot_amp_phase, join_args
+from utils import rfft_amp_phase, plot_amp_phase, join_args, butter_bandpass_filter, downsample
 
 # fix random seed for reproducibility
 np.random.seed(7)
 
 def csv_attributes(filename, delim=','):
+    '''
+    Parses the first line of a csv file and returns the list of attributes
+    '''
     with open(filename) as f:
         reader = csv.DictReader(f, delimiter=delim)
         fieldnames = reader.fieldnames
-        l = len(fieldnames)
-        return fieldnames[:l-1]
+        return fieldnames
 
 def rawdataIterator(filenames, n=-1, delim='\t'):
     """
@@ -38,12 +40,15 @@ def rawdataIterator(filenames, n=-1, delim='\t'):
                 hypno = int(float(row['10 Hypnogm']))
                 yield (eeg, hypno)
                 i += 1
-                #print(str(eeg)+' '+str(hypno)+' '+str(i))
                 if i == n:
                     f.close()
                     raise StopIteration()
 
 def load_cols_labels(filenames,cols=None,label=None,delim=','):
+    '''
+    Loads the specified columns and the label from a csv file with a header.
+    Returns two lists, one with lists of values (float), and one with the corrisponding list of labels (int)
+    '''
     data = []
     labels = []
     for filename in filenames:
@@ -71,6 +76,10 @@ def pad_previous(data, labels):
     return padded_data, padded_labels
 
 def reduceResolution(dataLabels, n):
+    '''
+    Generator that aggregates the samples.
+    Has issues with the label, use utils.aggregate instead!!!!
+    '''
     i = 0
     toAggregate = []
     labels = []
@@ -96,7 +105,7 @@ def segmentIterator(dataLabels, n = -1, cut_until_change=True, aggr=1, transitio
     '''
     iterates on an iterator of couples data-label
     returns a new iterator of tuples (segment-label).
-    a limit in size of the segments can be specified
+    a limit in size of the segments can be specified.
     '''
     prevlabel = -1
     first = True
@@ -148,6 +157,9 @@ def segmentIterator(dataLabels, n = -1, cut_until_change=True, aggr=1, transitio
         yield (seg,prevlabel)
 
 def dataLabelsArrays(dataLabels):
+    '''
+    Collects the data and the labels into arrays.
+    '''
     data = []
     labels = []
     for (d, l) in dataLabels:
@@ -368,13 +380,34 @@ def visualizeSecondsAmpPhase(filenames, n=-1, aggr=1, seconds=-1):
         #print('Stdev phase: '+str(st.stdev(p)))
         plot_amp_phase(a,p)
 
+def visualizeSecondsFiltered(filenames, n=-1, aggr=1, seconds=-1, lowcut=0, highcut=20,order=5):
+    dataLabels = rawdataIterator(filenames, n)
+    if seconds == -1:
+        segmentsLabels = segmentIterator(dataLabels,n,cut_until_change=True,aggr=aggr)
+    else:
+        segmentsLabels = segmentIterator(dataLabels,int(seconds/(0.002)),cut_until_change=True,aggr=aggr)
+    for (seg, label) in segmentsLabels:
+        print('Label: ' + str(label))
+        print('Lenght of segment: '+str(len(seg)))
+        print('Non filtered')
+        period = 0.002*aggr
+        fs = 1/period
+        visualize(seg, period)
+        fseg = butter_bandpass_filter(seg, lowcut, highcut, fs, order)
+        print('Filtered with lowcut='+str(lowcut) +' highcut=' + str(highcut))
+        visualize(fseg, period)
+        stride = int(fs/(2*highcut))
+        print('Downsampled with stride '+str(stride))
+        dseg = downsample(fseg, stride)
+        visualize(dseg, period*stride)
+
 def main():
     #filenames = ['../SleepEEG/rt 233_180511(1).txt','../SleepEEG/rt 233_180511(2).txt']
     #filenames = ['../SleepEEG/rt 239_310511(1).txt','../SleepEEG/rt 239_310511(2).txt']
     filenames = ['../SleepEEG/rt 233_180511(1).txt','../SleepEEG/rt 233_180511(2).txt','../SleepEEG/rt 239_310511(1).txt','../SleepEEG/rt 239_310511(2).txt']
     n = -1 #all data
-    r = 1 #no reduction #250
-    seconds = 5
+    r = 1 #no reduction
+    seconds = -1
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'f:n:r:s:h')
     except getopt.GetoptError as err:
@@ -405,6 +438,7 @@ def main():
     #visualizeResReduction(filenames,n,r)
     #visualizeSeconds(filenames,n,r,seconds)
     visualizeSecondsAmpPhase(filenames, n, r, seconds)
+    #visualizeSecondsFiltered(filenames, n, r, seconds, 0.5, 50)
     #printCsvSegmentsFreq(filenames,n)
 
 if __name__ == '__main__':

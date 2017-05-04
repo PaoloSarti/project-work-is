@@ -210,6 +210,12 @@ def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
     y = lfilter(b, a, data)
     return y
 
+def downsample(data, times):
+    ds = []
+    for i in range(0, len(data), times):
+        ds.append(data[i])
+    return ds
+
 def max_ampl_freq(amp, ignore_first = True):
     m = -1
     j = -1

@@ -54,7 +54,7 @@ print_cm(cm, labels)
 def print_pdf(classifier, filename, csv_filename):
     dot_data = tree.export_graphviz(classifier,
                                     out_file=None,
-                                    feature_names=csv_attributes(csv_filename),
+                                    feature_names=csv_attributes(csv_filename)[:-1],
                                     class_names=['Awake','Nrem','rem']) 
     graph = pydotplus.graph_from_dot_data(dot_data) 
     graph.write_pdf(filename)

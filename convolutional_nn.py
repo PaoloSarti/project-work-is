@@ -8,27 +8,28 @@ from training import fitValidate, predict_test, cross_validation_acc, pad_reshap
 import numpy as np
 import functools
 
+#-------------------------------------------Parameters---------------------------------------------
 filenames = ['../SleepEEG/rt 233_180511(1).txt','../SleepEEG/rt 233_180511(2).txt', '../SleepEEG/rt 239_310511(1).txt', '../SleepEEG/rt 239_310511(2).txt' ]
-nLines = -1
-seconds = 10
-n_classes = 3
-aggregate = 5
+nLines = -1                                 # How many lines to read from the csv file (-1: all of them)
+seconds = 10                                # Number of seconds to consider at the start of the segment
+n_classes = 3                              
+aggregate = 5                               # Reduce the resolution of the signal by aggregating adjacent samples with the mean
 sampling_period = 0.002
-n_filters = 16 # 16, 32
-kernel_size = 9 # Maybe... 3 5 7 9 ?
-n_features = 1
-dropout_rate = 0.2 # 0.5    (reduce overfitting)
-patience = 100
-model_filename = 'conv_weights.h5'
+n_filters = 16                              # Convolutional Layer parameter (8,16,32)
+kernel_size = 9                             # Size of the convolutional kernel (3 5 7 9...) 
+n_features = 1                              # N features per sample (only the voltage in this case)
+dropout_rate = 0.2                          # Parameter of the Droput layer to reduce overfitting (0.2-0.5)
+patience = 100                              # N of iterations without improving validation accuracy to wait
+model_filename = 'conv_weights.h5'          # Weights filename to store the best network (best accuracy on validation)
 learning_rate = 0.00001
-labels = label_names(n_classes)
-cache = True
-verbose = False
-n_conv_layers = 3
-transitions = True
-crossvalidate = False
-compare_individuals = True
-pool_size = 2
+labels = label_names(n_classes)             # Names of the classes
+cache = True                                # Cache on the filesystem the prepared data (improve drastically the performance for subsequent runs with the same parameters)
+verbose = False                             
+n_conv_layers = 3                           # How many hidden convolutional layers (Conv, MaxPool, BatchNorm, Dropout) to use
+transitions = True                          # Consider also the same number of seconds before the start of the sequence
+crossvalidate = False                       # Cross validation on the entire dataset (mutually exclusive with compare_individuals)
+compare_individuals = True                  # Train the model on one individual, test on the other
+pool_size = 2                               # Size of the MaxPool layer
 #l = int(seconds/(sampling_period*aggregate))
 #length = l if not transitions else 2 * l
 
@@ -90,12 +91,10 @@ else:
     length = len(X_train[0])
     class_weights = class_weights_max(y_train)
 
-
 print_parameters('\t', length=length, class_weights=class_weights)
 
 #---------------------------------------Model---------------------------------------------
 model = Sequential()
-#model.add(Conv1D(n_filters, kernel_size, activation='relu', input_shape=(length,n_features)))
 
 for i in range(n_conv_layers):
     if i == 0:
@@ -106,8 +105,6 @@ for i in range(n_conv_layers):
     model.add(BatchNormalization())
     model.add(Dropout(dropout_rate))
 model.add(Flatten())
-#model.add(Dense(neurons, activation='sigmoid'))
-#model.add(Dropout(dropout_rate))
 model.add(Dense(n_classes, activation='softmax'))
 model.compile(loss='categorical_crossentropy', optimizer=RMSprop(lr=learning_rate), metrics=['categorical_accuracy'])
 print(model.summary())
