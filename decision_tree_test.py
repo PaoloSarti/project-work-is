@@ -17,7 +17,7 @@ crit = 'gini'
 min_split = 10
 max_depth = 5
 test_individuals = False
-pad_prev = True
+pad_prev = False
 
 print('Parameters')
 print_parameters('\t', filenames=filenames, criterion=crit, min_samples_split=min_split, max_depth=max_depth)
@@ -26,11 +26,11 @@ if test_individuals:
     (trainData, trainLabels) = load_cols(filenames[:1], pad_prev=pad_prev)
     (testData, testLabels) = load_cols(filenames[1:], pad_prev=pad_prev)
 else:
-    (trainData,trainLabels), (testData, testLabels) = load_cols_train_test(filenames, perc_train=0.8, pad_prev=pad_prev) #load_segment_statistics_train_test(filenames, perc_train=0.8)
+    (trainData,trainLabels), (testData, testLabels) = load_cols_train_test(filenames, perc_train=0.5, pad_prev=pad_prev) #load_segment_statistics_train_test(filenames, perc_train=0.8)
 
 classifier = tree.DecisionTreeClassifier(criterion='gini',min_samples_split=min_split,max_depth=max_depth)
 
-#classifier = RandomForestClassifier(n_estimators=50)
+#classifier = RandomForestClassifier(n_estimators=100)
 
 #print(trainData[0])
 
@@ -55,9 +55,9 @@ def print_pdf(classifier, filename, csv_filename):
     dot_data = tree.export_graphviz(classifier,
                                     out_file=None,
                                     feature_names=csv_attributes(csv_filename)[:-1],
-                                    class_names=['Awake','Nrem','rem']) 
+                                    class_names=labels) 
     graph = pydotplus.graph_from_dot_data(dot_data) 
     graph.write_pdf(filename)
 
-#print_pdf(classifier,pdffile, filenames[0])
+print_pdf(classifier,pdffile, filenames[0])
 #tree.export_graphviz(classifier,out_file=dotfile)

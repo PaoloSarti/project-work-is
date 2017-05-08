@@ -27,7 +27,7 @@ cache = True                                # Cache on the filesystem the prepar
 verbose = False                             
 n_conv_layers = 3                           # How many hidden convolutional layers (Conv, MaxPool, BatchNorm, Dropout) to use
 transitions = True                          # Consider also the same number of seconds before the start of the sequence
-crossvalidate = False                       # Cross validation on the entire dataset (mutually exclusive with compare_individuals)
+crossvalidate = False                       # Cross validation on the entire dataset (mutually exclusive with compare_individuals). Currently not correct...
 compare_individuals = False                 # Train the model on one individual, test on the other
 pool_size = 2                               # Size of the MaxPool layer
 #l = int(seconds/(sampling_period*aggregate))
@@ -98,7 +98,7 @@ model = Sequential()
 
 for i in range(n_conv_layers):
     if i == 0:
-        model.add(Conv1D(n_filters, kernel_size, activation='relu', input_shape=(length,n_features)))
+        model.add(Conv1D(n_filters, kernel_size, activation='relu', input_shape=(length,n_features), strides=1))
     else:
         model.add(Conv1D(n_filters, kernel_size, activation='relu'))
     model.add(MaxPool1D(pool_size))
@@ -109,7 +109,7 @@ model.add(Dense(n_classes, activation='softmax'))
 model.compile(loss='categorical_crossentropy', optimizer=RMSprop(lr=learning_rate), metrics=['categorical_accuracy'])
 print(model.summary())
 
-prepare_data = functools.partial(pad_reshape, length=length, n_features=n_features)
+prepare_data = functools.partial(pad_reshape, length=length, n_features=n_features, padding='post')
 
 if crossvalidate:
     acc = cross_validation_acc(model, X_data, y_data, labels, model_filename, class_weights, prepare_data, patience, n_splits = 5)

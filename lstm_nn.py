@@ -132,8 +132,6 @@ X_test = reshape(X_test, max_length, n_features)
 #---------------------------------------Model---------------------------------------------
 model = Sequential()
 model.add(LSTM(neurons, input_shape=(max_length,n_features))) #for more layers ,return_sequences=True
-#Add layers here
-#model.add(LSTM(neurons))
 model.add(Dense(n_classes, activation='softmax'))
 model.compile(loss='categorical_crossentropy', optimizer=RMSprop(lr=learning_rate), metrics=['categorical_accuracy'])
 print(model.summary())

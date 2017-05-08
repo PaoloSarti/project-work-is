@@ -216,7 +216,7 @@ def downsample(data, times):
         ds.append(data[i])
     return ds
 
-def max_ampl_freq(amp, ignore_first = True):
+def max_ampl_freq(amp, ignore_first = False):
     m = -1
     j = -1
     start = 1 if ignore_first else 0
@@ -225,3 +225,10 @@ def max_ampl_freq(amp, ignore_first = True):
             m = amp[i]
             j = i
     return j
+
+def ampl_freq_range(amp, lowcut, highcut, aggr_fn = np.mean):
+    '''
+    From the amplitude frequency spectrum, select a range of frequencies between highcut and lowcut, and aggregate them (default = mean)
+    '''
+    cut_amp = amp[int(lowcut):int(highcut)]
+    return aggr_fn(cut_amp)

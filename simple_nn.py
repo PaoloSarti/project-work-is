@@ -11,7 +11,7 @@ from training import fitValidate, predict_test
 import numpy as np
 import sys
 
-filenames = ['../crunched_data/233_ff.csv','../crunched_data/239_ff.csv']
+filenames = ['../crunched_data/233_ff.csv']#,'../crunched_data/239_ff.csv']
 learning_rate = 0.0001
 patience = 1000
 n_hidden_layers = 3
@@ -22,13 +22,11 @@ pad_prev = True
 neurons = 2 * neurons if pad_prev else neurons
 compare_individuals = False
 
-#(trainData,trainLabels), (testData, testLabels) = load_segment_statistics_train_test(filenames, perc_train=0.8)
-#load_segment_statistics_train_valid_test(filenames, perc_train=0.7, perc_valid=0.1)
 if compare_individuals:
     (trainData,trainLabels), (validData, validLabels) = load_cols_train_test(filenames[:1], pad_prev=pad_prev)
     (testData, testLabels) = load_cols(filenames[1:], pad_prev=pad_prev)
 else:
-    (trainData,trainLabels), (validData, validLabels), (testData, testLabels) = load_cols_train_valid_test(filenames, perc_train=0.7, perc_valid=0.1, pad_prev=pad_prev)
+    (trainData,trainLabels), (validData, validLabels), (testData, testLabels) = load_cols_train_valid_test(filenames, perc_train=0.5, perc_valid=0.2, pad_prev=pad_prev)
 
 class_weights = class_weights_max(trainLabels)
 
