@@ -11,7 +11,7 @@ from training import fitValidate, predict_test
 import numpy as np
 import sys
 
-filenames = ['../crunched_data/233_ff.csv']#,'../crunched_data/239_ff.csv']
+filenames = ['../crunched_data/233_ff.csv', '../crunched_data/239_ff.csv']
 learning_rate = 0.0001
 patience = 1000
 n_hidden_layers = 3
@@ -42,14 +42,22 @@ normTrainData = normalizeColumns(trainData)
 normValidData = normalizeColumns(validData)
 normTestData = normalizeColumns(testData)
 
+def simple_model():
+    model = Sequential()
+    model.add(Dense(neurons, input_dim=normTrainData.shape[1], activation='sigmoid'))
+    model.add(Dense(3, activation='softmax'))
+    return model
+
 model = Sequential()
-model.add(Dense(neurons, input_dim=normTrainData.shape[1], activation=activation))
+model.add(Dense(neurons, input_dim=normTrainData.shape[1]))
 if activation == 'relu':
     model.add(BatchNormalization())
+model.add(Activation(activation))
 for i in range(n_hidden_layers-1):
-    model.add(Dense(neurons, activation=activation))
+    model.add(Dense(neurons))
     if activation == 'relu':
         model.add(BatchNormalization())
+    model.add(Activation(activation))
 model.add(Dense(3, activation='softmax'))
 
 model.compile(optimizer=RMSprop(lr=learning_rate),

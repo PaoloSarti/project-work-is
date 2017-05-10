@@ -12,9 +12,8 @@ def fitValidationSplit(model, X_train, y_train, split=2/7, epochs=1000, patience
     model.fit(X_train, y_train, validation_split=split, verbose=2, epochs=epochs, callbacks=[EarlyStopping(monitor='loss', patience=100)]) #categorical_accuracy
 
 def fitValidate(model, X_train, y_train, X_val, y_val, labels,  model_filename, class_weights, patience=10, resume=False, max_train_accuracy=0.99):
-    prev_accuracy = -1
+    best_accuracy = -1
     patience_count = 0
-    prev_loss = -1
     i = 0
     if resume:
         model.load_weights(model_filename)
@@ -46,8 +45,8 @@ def fitValidate(model, X_train, y_train, X_val, y_val, labels,  model_filename, 
         cm = confusion_matrix(y_val, y_pred)
         print('Confusion matrix')
         print_cm(cm, labels)
-        if prev_accuracy == -1 or accuracy > prev_accuracy:
-            prev_accuracy = accuracy
+        if best_accuracy == -1 or accuracy > best_accuracy:
+            best_accuracy = accuracy
             #Save the model with the best accuracy on the validation set
             model.save_weights(model_filename)
             patience_count = 0
@@ -62,6 +61,35 @@ def fitValidate(model, X_train, y_train, X_val, y_val, labels,  model_filename, 
             print('Maximum train accuracy reached...')
             break
     model.load_weights(model_filename)
+
+# Simplified method to insert into the slides
+
+def train(model, X_train, y_train, X_val, y_val, model_filename, patience=100):
+    best_accuracy = -1
+    patience_count = 0
+    i = 0
+    while True:
+        # Train one epoch at a time
+        model.fit(X_train, y_train, epochs=1)
+        # Predict on validation
+        y_pred = model.predict_classes(X_val)
+        # Compute scores on validation
+        accuracy = accuracy_score(y_val, y_pred)
+        # Check the best accuracy
+        if best_accuracy == -1 or accuracy > best_accuracy:
+            best_accuracy = accuracy
+            #Save the model with the best accuracy on the validation set
+            model.save_weights(model_filename)
+            patience_count = 0
+        else:
+            patience_count += 1
+            # Early stopping with accuracy on validation with patience
+            if patience_count == patience:
+                print('Accuracy on validation stopped decreasing')
+                break
+        i += 1
+    model.load_weights(model_filename)
+
 
 def predict_test(model, X_test, y_test, labels):
     y_pred = model.predict_classes(X_test)
