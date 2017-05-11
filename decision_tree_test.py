@@ -9,7 +9,7 @@ from fetchdata import load_cols_train_test, csv_attributes, load_cols
 from utils import print_cm, print_parameters
 import pydotplus
 
-filenames = ['../crunched_data/239_ff.csv','../crunched_data/233_ff.csv']
+filenames = ['../crunched_data/233_ff.csv', '../crunched_data/239_ff.csv']
 pdffile = '233_239.pdf'
 dotfile = '239_tree.dot'
 labels = ['Awake','Nrem','Rem']
@@ -26,16 +26,10 @@ if test_individuals:
     (trainData, trainLabels) = load_cols(filenames[:1], pad_prev=pad_prev)
     (testData, testLabels) = load_cols(filenames[1:], pad_prev=pad_prev)
 else:
-    (trainData,trainLabels), (testData, testLabels) = load_cols_train_test(filenames, perc_train=0.5, pad_prev=pad_prev) #load_segment_statistics_train_test(filenames, perc_train=0.8)
+    (trainData,trainLabels), (testData, testLabels) = load_cols_train_test(filenames, perc_train=0.7, pad_prev=pad_prev) #load_segment_statistics_train_test(filenames, perc_train=0.8)
 
 classifier = tree.DecisionTreeClassifier(criterion='gini',min_samples_split=min_split,max_depth=max_depth)
-
-#classifier = RandomForestClassifier(n_estimators=100)
-
-#print(trainData[0])
-
 classifier.fit(trainData, trainLabels)
-
 trainPred = classifier.predict(trainData)
 predicted = classifier.predict(testData)
 
@@ -59,5 +53,5 @@ def print_pdf(classifier, filename, csv_filename):
     graph = pydotplus.graph_from_dot_data(dot_data) 
     graph.write_pdf(filename)
 
-print_pdf(classifier,pdffile, filenames[0])
+#print_pdf(classifier,pdffile, filenames[0])
 #tree.export_graphviz(classifier,out_file=dotfile)

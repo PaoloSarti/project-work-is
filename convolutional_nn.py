@@ -95,7 +95,6 @@ print_parameters('\t', length=length, class_weights=class_weights)
 
 #---------------------------------------Model---------------------------------------------
 model = Sequential()
-
 for i in range(n_conv_layers):
     if i == 0:
         model.add(Conv1D(n_filters, kernel_size, activation='relu', input_shape=(length,n_features), strides=1))
