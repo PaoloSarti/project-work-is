@@ -21,12 +21,13 @@ neurons = 20
 pad_prev = True
 neurons = 2 * neurons if pad_prev else neurons
 compare_individuals = False
+cols = ['SegmentStdDev', 'FreqAmplAvg', 'FreqAmplMaxFreq', 'SegmentLength', 'FreqAmplStdev', 'SegmentMax', 'SegmentMin', 'FreqAmplMin']
 
 if compare_individuals:
-    (trainData,trainLabels), (validData, validLabels) = load_cols_train_test(filenames[:1], pad_prev=pad_prev)
-    (testData, testLabels) = load_cols(filenames[1:], pad_prev=pad_prev)
+    (trainData,trainLabels), (validData, validLabels) = load_cols_train_test(filenames[:1], pad_prev=pad_prev, cols=cols)
+    (testData, testLabels) = load_cols(filenames[1:], pad_prev=pad_prev, cols=cols)
 else:
-    (trainData,trainLabels), (validData, validLabels), (testData, testLabels) = load_cols_train_valid_test(filenames, perc_train=0.5, perc_valid=0.2, pad_prev=pad_prev)
+    (trainData,trainLabels), (validData, validLabels), (testData, testLabels) = load_cols_train_valid_test(filenames, perc_train=0.5, perc_valid=0.2, pad_prev=pad_prev, cols=cols)
 
 class_weights = class_weights_max(trainLabels)
 
@@ -46,6 +47,17 @@ def simple_model():
     model = Sequential()
     model.add(Dense(neurons, input_dim=normTrainData.shape[1], activation='sigmoid'))
     model.add(Dense(3, activation='softmax'))
+    return model
+
+def deep_model():
+    model=Sequential()
+    model.add(Dense(neurons, input_dim=normTrainData.shape[1]))
+    model.add(BatchNormalization())
+    model.add(Activation(activation))
+    for i in range(n_hidden_layers-1):
+        model.add(Dense(neurons))
+        model.add(BatchNormalization())
+        model.add(Activation(activation))
     return model
 
 model = Sequential()

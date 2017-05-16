@@ -34,3 +34,13 @@ digraph G {
   "nrem" -> "rem"
   "rem" -> "awake"
 }
+
+Decision Tree most relevant features:
+-SegmentStdDev
+-FreqAmplAvg
+-FreqAmplMaxFreq
+-SegmentLength
+-FreqAmplStdev
+-SegmentMax
+-SegmentMin
+-FreqAmplMin

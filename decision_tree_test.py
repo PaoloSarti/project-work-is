@@ -10,14 +10,14 @@ from utils import print_cm, print_parameters
 import pydotplus
 
 filenames = ['../crunched_data/233_ff.csv', '../crunched_data/239_ff.csv']
-pdffile = '233_239.pdf'
+pdffile = '233_239_ff.pdf'
 dotfile = '239_tree.dot'
 labels = ['Awake','Nrem','Rem']
 crit = 'gini'
 min_split = 10
 max_depth = 5
 test_individuals = False
-pad_prev = False
+pad_prev = True
 
 print('Parameters')
 print_parameters('\t', filenames=filenames, criterion=crit, min_samples_split=min_split, max_depth=max_depth)

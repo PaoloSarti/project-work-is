@@ -193,18 +193,18 @@ def stratifiedTrainValidTest(data, labels, perc_train=0.5, perc_valid=0.2):
     print('test length: '+str(len(testData))+' '+str(len(testLabels)))
     return (trainData,trainLabels), (validateData, validateLabels), (testData, testLabels)
 
-def load_cols(filenames, pad_prev=True):
-    data, labels = load_cols_labels(filenames)
+def load_cols(filenames, pad_prev=True, cols=None, label=None):
+    data, labels = load_cols_labels(filenames, cols, label)
     if pad_prev:
         data, labels = pad_previous(data, labels)
     return data, labels
 
-def load_cols_train_test(filenames, perc_train=0.7, pad_prev=True):
-    data, labels = load_cols(filenames, pad_prev)
+def load_cols_train_test(filenames, perc_train=0.7, pad_prev=True, cols=None, label=None):
+    data, labels = load_cols(filenames, pad_prev, cols, label)
     return stratifiedTrainTest(data, labels, perc_train)
 
-def load_cols_train_valid_test(filenames, perc_train=0.5, perc_valid=0.2, pad_prev=True):
-    data, labels = load_cols(filenames, pad_prev)
+def load_cols_train_valid_test(filenames, perc_train=0.5, perc_valid=0.2, pad_prev=True, cols=None, label=None):
+    data, labels = load_cols(filenames, pad_prev, cols, label)
     return stratifiedTrainValidTest(data, labels, perc_train, perc_valid)
 
 def stratifiedTrainTest(data,labels,perc_train=0.7):
