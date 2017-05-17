@@ -10,11 +10,10 @@ from utils import print_cm, print_parameters
 import pydotplus
 
 filenames = ['../crunched_data/233_ff.csv', '../crunched_data/239_ff.csv']
-pdffile = '233_239_ff.pdf'
-dotfile = '239_tree.dot'
+pdffile = '233_239.pdf'
 labels = ['Awake','Nrem','Rem']
 crit = 'gini'
-min_split = 10
+min_split = 5
 max_depth = 5
 test_individuals = False
 pad_prev = True
@@ -34,12 +33,16 @@ trainPred = classifier.predict(trainData)
 predicted = classifier.predict(testData)
 
 print('On training set')
+train_acc = accuracy_score(trainLabels, trainPred)
+print('Accuracy: %f' % train_acc)
 print(classification_report(trainLabels, trainPred))
 print('Confusion matrix')
 cm = confusion_matrix(trainLabels,trainPred)
 print_cm(cm, labels)
 print()
 print('On test set')
+test_acc = accuracy_score(testLabels, predicted)
+print('Accuracy: %f' % test_acc)
 print(classification_report(testLabels,predicted))
 print('Confusion matrix')
 cm = confusion_matrix(testLabels,predicted)
@@ -54,4 +57,3 @@ def print_pdf(classifier, filename, csv_filename):
     graph.write_pdf(filename)
 
 #print_pdf(classifier,pdffile, filenames[0])
-#tree.export_graphviz(classifier,out_file=dotfile)

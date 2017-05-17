@@ -1,5 +1,5 @@
 from keras.models import Sequential
-from keras.layers import Dense, Conv1D, MaxPool1D, BatchNormalization, Dropout, Flatten
+from keras.layers import Dense, Conv1D, MaxPool1D, BatchNormalization, Dropout, Flatten, Activation
 from keras.utils.np_utils import to_categorical
 from keras.optimizers import RMSprop
 from fetchdata import loadStratifiedDataset, cachedDatalabels
@@ -97,11 +97,12 @@ print_parameters('\t', length=length, class_weights=class_weights)
 model = Sequential()
 for i in range(n_conv_layers):
     if i == 0:
-        model.add(Conv1D(n_filters, kernel_size, activation='relu', input_shape=(length,n_features), strides=1))
+        model.add(Conv1D(n_filters, kernel_size, input_shape=(length,n_features), strides=1))
     else:
-        model.add(Conv1D(n_filters, kernel_size, activation='relu'))
+        model.add(Conv1D(n_filters, kernel_size))
     model.add(MaxPool1D(pool_size))
     model.add(BatchNormalization())
+    model.add(Activation('relu'))
     model.add(Dropout(dropout_rate))
 model.add(Flatten())
 model.add(Dense(n_classes, activation='softmax'))

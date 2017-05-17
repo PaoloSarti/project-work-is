@@ -63,7 +63,6 @@ def fitValidate(model, X_train, y_train, X_val, y_val, labels,  model_filename, 
     model.load_weights(model_filename)
 
 # Simplified method to insert into the slides
-
 def train(model, X_train, y_train, X_val, y_val, model_filename, patience=100):
     best_accuracy = -1
     patience_count = 0
@@ -94,8 +93,10 @@ def train(model, X_train, y_train, X_val, y_val, model_filename, patience=100):
 def predict_test(model, X_test, y_test, labels):
     y_pred = model.predict_classes(X_test)
     report = classification_report(y_test, y_pred)
+    accuracy = accuracy_score(y_test, y_pred)
     print()
     print('Test classification report')
+    print('Accuracy: %f' % accuracy)
     print(report)
     print('Test confusion Matrix')
     cm = confusion_matrix(y_test, y_pred)

@@ -19,7 +19,7 @@ activation = 'relu'
 resume = False
 neurons = 20
 pad_prev = True
-neurons = 2 * neurons if pad_prev else neurons
+neurons = 2 * neurons if pad_prev else neurons #double the neuron count if the inputs are doubled
 compare_individuals = False
 cols = ['SegmentStdDev', 'FreqAmplAvg', 'FreqAmplMaxFreq', 'SegmentLength', 'FreqAmplStdev', 'SegmentMax', 'SegmentMin', 'FreqAmplMin']
 
@@ -37,7 +37,6 @@ print_parameters('\t', filenames=filenames, learning_rate=learning_rate, patienc
 #categorical
 trainLabelsCat = to_categorical(trainLabels,num_classes=3)
 
-#trainData = np.array(trainData)
 #Normalized
 normTrainData = normalizeColumns(trainData)
 normValidData = normalizeColumns(validData)
