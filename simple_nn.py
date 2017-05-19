@@ -11,6 +11,7 @@ from training import fitValidate, predict_test
 import numpy as np
 import sys
 
+#---------------------------Parameters-------------------------------------
 filenames = ['../crunched_data/233_ff.csv', '../crunched_data/239_ff.csv']
 learning_rate = 0.0001
 patience = 1000
@@ -23,6 +24,7 @@ neurons = 2 * neurons if pad_prev else neurons #double the neuron count if the i
 compare_individuals = False
 cols = ['SegmentStdDev', 'FreqAmplAvg', 'FreqAmplMaxFreq', 'SegmentLength', 'FreqAmplStdev', 'SegmentMax', 'SegmentMin', 'FreqAmplMin']
 
+#------------------------- Load datasets----------------------------------
 if compare_individuals:
     (trainData,trainLabels), (validData, validLabels) = load_cols_train_test(filenames[:1], pad_prev=pad_prev, cols=cols)
     (testData, testLabels) = load_cols(filenames[1:], pad_prev=pad_prev, cols=cols)
@@ -34,6 +36,7 @@ class_weights = class_weights_max(trainLabels)
 print('Parameters')
 print_parameters('\t', filenames=filenames, learning_rate=learning_rate, patience=patience, class_weights=class_weights, resume=resume, pad_prev=pad_prev, neurons=neurons)
 
+#--------------------------Prepare dataset-------------------------------
 #categorical
 trainLabelsCat = to_categorical(trainLabels,num_classes=3)
 
@@ -59,6 +62,8 @@ def deep_model():
         model.add(Activation(activation))
     return model
 
+
+#------------------------Model------------------------------------------
 model = Sequential()
 model.add(Dense(neurons, input_dim=normTrainData.shape[1]))
 if activation == 'relu':
@@ -76,6 +81,7 @@ model.compile(optimizer=RMSprop(lr=learning_rate),
               metrics=['categorical_accuracy'])
 print(model.summary())
 
+#-------------------------Train and Test---------------------------------
 fitValidate(model, normTrainData, trainLabelsCat, normValidData, validLabels, label_names(), 'simple_weights.h5',class_weights, patience, resume)
 
 predict_test(model, normTestData, testLabels, label_names())

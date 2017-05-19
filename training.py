@@ -63,13 +63,13 @@ def fitValidate(model, X_train, y_train, X_val, y_val, labels,  model_filename, 
     model.load_weights(model_filename)
 
 # Simplified method to insert into the slides
-def train(model, X_train, y_train, X_val, y_val, model_filename, patience=100):
+def train(model, X_train, y_train, X_val, y_val, model_filename, class_weights, patience=100):
     best_accuracy = -1
     patience_count = 0
     i = 0
     while True:
         # Train one epoch at a time
-        model.fit(X_train, y_train, epochs=1)
+        model.fit(X_train, y_train, epochs=1, class_weight=class_weights)
         # Predict on validation
         y_pred = model.predict_classes(X_val)
         # Compute scores on validation
