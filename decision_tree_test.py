@@ -1,3 +1,5 @@
+# Script to train and test the Decision Tree
+
 from sklearn import tree
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import precision_recall_fscore_support
@@ -53,6 +55,7 @@ cm = confusion_matrix(testLabels,predicted)
 print_cm(cm, labels)
 
 def print_pdf(classifier, filename, csv_filename):
+    'Print the decision tree on pdf'
     dot_data = tree.export_graphviz(classifier,
                                     out_file=None,
                                     feature_names=csv_attributes(csv_filename)[:-1],

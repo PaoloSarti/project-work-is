@@ -1,3 +1,5 @@
+# Script used to train and test lstm neural networks
+
 from keras.models import Sequential
 from keras.layers import Dense, LSTM, GRU
 from keras.utils.np_utils import to_categorical

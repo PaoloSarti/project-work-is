@@ -1,3 +1,5 @@
+# Module that contains utility functions
+
 import statistics as st
 import numpy as np
 from collections import deque
@@ -88,7 +90,7 @@ def print_parameters(indent, **kwargs):
         print(indent+key+': '+str(arg))
     print()
 
-#Thanks to Zach Guo
+#Thanks to Zach Guo https://gist.github.com/zachguo/10296432
 def print_cm(cm, labels, hide_zeroes=False, hide_diagonal=False, hide_threshold=None):
     """pretty print for confusion matrixes"""
     columnwidth = max([len(x) for x in labels]+[5]) # 5 is value length
@@ -130,22 +132,6 @@ def normalize_counts(d):
     nd = {}
     for k,v in d.items():
         nd[k] = v/l
-    return nd
-
-def invert_counts(d):
-    nd = {}
-    for k,d in d.items():
-        nd[k] = 1.0/d
-    return nd
-
-def inverted_counts(l):
-    return invert_counts(items_count(l))
-
-def softmax_dict(d):
-    nd = {}
-    den = sum(math.exp(z) for z in d.values())
-    for k,v in d.items():
-        nd[k] = math.exp(v)/den
     return nd
 
 def class_weight_count(labels):

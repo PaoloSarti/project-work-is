@@ -1,3 +1,5 @@
+# Script used to train and test convolutional neural networks
+
 from keras.models import Sequential
 from keras.layers import Dense, Conv1D, MaxPool1D, BatchNormalization, Dropout, Flatten, Activation
 from keras.utils.np_utils import to_categorical
@@ -58,7 +60,7 @@ print_parameters('\t',filenames=filenames,
 if crossvalidate:
     X_data, y_data = cachedDatalabels(filenames, aggregate, nLines, seconds, sampling_period=sampling_period, transitions=transitions)
 elif compare_individuals:
-    (X_train, y_train), (X_val, y_val) = loadStratifiedDataset(filenames[2:],
+    (X_train, y_train), (X_val, y_val) = loadStratifiedDataset(filenames[:2],
                                                                 aggregate,
                                                                 nLines, 
                                                                 seconds, 
@@ -67,7 +69,7 @@ elif compare_individuals:
                                                                 transitions=transitions, 
                                                                 verbose=verbose,
                                                                 cache=cache)
-    (X_test, y_test) = cachedDatalabels(filenames[:2],
+    (X_test, y_test) = cachedDatalabels(filenames[2:],
                                         aggregate,
                                         nLines,
                                         seconds,

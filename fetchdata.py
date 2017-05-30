@@ -1,3 +1,6 @@
+# Module that contatins functions to fetch the data as sequences or features.
+# Contains also some functions to visualize the sequences.
+
 import csv
 import sys
 import getopt
@@ -67,6 +70,7 @@ def load_cols_labels(filenames,cols=None,label=None,delim=','):
     return data,labels
 
 def pad_previous(data, labels):
+    'For each tuple, pads the previous tuple to it'
     padded_data = []
     padded_labels = labels[1:]
     prev = data[0]
@@ -77,8 +81,8 @@ def pad_previous(data, labels):
 
 def reduceResolution(dataLabels, n):
     '''
-    Generator that aggregates the samples.
-    Has issues with the label, use utils.aggregate instead!!!!
+    Generator that aggregates the samples with the mean.
+    Use utils.aggregate to preserve the same number of segments.
     '''
     i = 0
     toAggregate = []
@@ -106,6 +110,7 @@ def segmentIterator(dataLabels, n = -1, cut_until_change=True, aggr=1, transitio
     iterates on an iterator of couples data-label
     returns a new iterator of tuples (segment-label).
     a limit in size of the segments can be specified.
+    If the transitions flag is True, then it pads also the specified n of samples before the transition.
     '''
     prevlabel = -1
     first = True
@@ -185,25 +190,29 @@ def maxMinSegments(segments):
     return ma,mi
 
 def stratifiedTrainValidTest(data, labels, perc_train=0.5, perc_valid=0.2):
+    'Partition the data into train, validation and test splits, with stratification'
     trainValidData, testData, trainValidLabels, testLabels = train_test_split(data, labels, train_size=perc_train+perc_valid, stratify=labels)
     trainData, validateData, trainLabels, validateLabels = train_test_split(trainValidData, trainValidLabels, train_size=perc_train/(perc_train+perc_valid), stratify=trainValidLabels)
-    print('data length: '+str(len(data))+' '+str(len(labels)))
-    print('train lengths: '+str(len(trainData))+' '+str(len(trainLabels)))
-    print('validate lengths: '+str(len(validateData))+' '+str(len(validateLabels)))
-    print('test length: '+str(len(testData))+' '+str(len(testLabels)))
+    #print('data length: '+str(len(data))+' '+str(len(labels)))
+    #print('train lengths: '+str(len(trainData))+' '+str(len(trainLabels)))
+    #print('validate lengths: '+str(len(validateData))+' '+str(len(validateLabels)))
+    #print('test length: '+str(len(testData))+' '+str(len(testLabels)))
     return (trainData,trainLabels), (validateData, validateLabels), (testData, testLabels)
 
 def load_cols(filenames, pad_prev=True, cols=None, label=None):
+    'Load features and labels from the specified csv files'
     data, labels = load_cols_labels(filenames, cols, label)
     if pad_prev:
         data, labels = pad_previous(data, labels)
     return data, labels
 
 def load_cols_train_test(filenames, perc_train=0.7, pad_prev=True, cols=None, label=None):
+    'Load features and labels from the specified csv files, and with a train-test split'
     data, labels = load_cols(filenames, pad_prev, cols, label)
     return stratifiedTrainTest(data, labels, perc_train)
 
 def load_cols_train_valid_test(filenames, perc_train=0.5, perc_valid=0.2, pad_prev=True, cols=None, label=None):
+    'Load features and labels from the specified csv files, and with a train-validation-test split'
     data, labels = load_cols(filenames, pad_prev, cols, label)
     return stratifiedTrainValidTest(data, labels, perc_train, perc_valid)
 
@@ -220,6 +229,7 @@ def load_datalabels_arrays(filenames,aggr,n,seconds,sampling_period,transitions,
     return dataLabelsArrays(segments)
 
 def cachedDatalabels(filenames, aggr=1, n=-1, seconds=5, sampling_period=0.002, validation=False, transitions=False, verbose=True, change_n_classes= False):
+    'Load the data and labels arrays and caches them into a json file to achieve much faster loading'
     dumpedfilename = 'cache' + '_a'+str(aggr)+'_n'+str(n)+'_s'+str(seconds)
     fnhash = hashlib.sha224(''.join(filenames).encode()).hexdigest()[:8]
     dumpedfilename += '_f' +fnhash
@@ -236,7 +246,7 @@ def cachedDatalabels(filenames, aggr=1, n=-1, seconds=5, sampling_period=0.002, 
     return data, labels
 
 def loadStratifiedDataset(filenames, aggr=1, n=-1, seconds=5, sampling_period=0.002, validation=True, transitions=False, verbose=True, cache=True,change_n_classes=False):
-    #caching the intermediate result
+    'Load the data partitions'
     if cache:
         data, labels = cachedDatalabels(filenames,aggr,n,seconds,sampling_period,validation,transitions,verbose,change_n_classes)
     else:
@@ -255,23 +265,7 @@ def loadStratifiedDataset(filenames, aggr=1, n=-1, seconds=5, sampling_period=0.
         testData = normalizeSegments(testData, ma, mi)
         return (trainData,trainLabels), (testData, testLabels)
 
-def segment(data, labels):
-    lists = []
-    listsLabels = []
-    l = len(data)
-    prevlabel = -1
-    i = 0
-    j = 0
-    while i < l:
-        prevlabel = labels[i]
-        lists.append([])
-        listsLabels.append(labels[i])
-        while i < l and labels[i] == prevlabel:
-            lists[j].append(data[i])
-            i += 1
-        j += 1
-    return lists, listsLabels
-
+#--------------------------------Visualization and Print Tests-------------------------------
 def visualize(data, step):
     xs = np.arange(0,len(data)*step,step)
     plt.plot(xs, data)
@@ -289,27 +283,6 @@ def saveSegmentsFigs(segmentedData, labels, step, basefilename):
         plt.grid(True)
         plt.savefig(basefilename + '_' + str(i) + '_' + str(labels[i]) + '.png')
         plt.clf()
-
-def segmentWithLabelAndLength(data, labels, n):
-    lists = []
-    listsLabels = []
-    l = len(data)
-    prevlabel = -1
-    i = 0
-    j = 0
-    while i < l:
-        prevlabel = labels[i]
-        lists.append([])
-        listsLabels.append(labels[i])
-        k = 0
-        while i < l and labels[i] == prevlabel and k < n:
-            lists[j].append(data[i])
-            i += 1
-            k += 1
-        j += 1
-    return lists, listsLabels
-
-#--------------------------------Tests-------------------------------
 
 def printCsvSegmentsReduceRes(filenames, n, r):
     dataLabels = rawdataIterator(filenames,n)
@@ -402,6 +375,7 @@ def visualizeSecondsFiltered(filenames, n=-1, aggr=1, seconds=-1, lowcut=0, high
         visualize(dseg, period*stride)
 
 def main():
+    'Main function used to visualize/test functionalities'
     #filenames = ['../SleepEEG/rt 233_180511(1).txt','../SleepEEG/rt 233_180511(2).txt']
     #filenames = ['../SleepEEG/rt 239_310511(1).txt','../SleepEEG/rt 239_310511(2).txt']
     filenames = ['../SleepEEG/rt 233_180511(1).txt','../SleepEEG/rt 233_180511(2).txt','../SleepEEG/rt 239_310511(1).txt','../SleepEEG/rt 239_310511(2).txt']
