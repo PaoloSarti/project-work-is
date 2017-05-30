@@ -1,9 +1,15 @@
+# Script that extracts features 
+
 import statistics as st
 from fetchdata import rawdataIterator, segmentIterator
 from utils import rfft_amp_phase, max_ampl_freq, ampl_freq_range
 from functools import partial
 
 def printCsvSegmentsFreqDict(filenames, seg_fns, freq_fns):
+    '''
+    Prints to stdout csv (comma-separated) output of the features computed on the temporal and frequency domain
+    by the two dictionaries {name:function}
+    '''
     header = ''
     for fn_name in seg_fns.keys():
         header += fn_name+','
