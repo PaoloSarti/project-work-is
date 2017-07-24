@@ -174,6 +174,10 @@ def dataLabelsArrays(dataLabels):
 
 def normalizeSegments(segments, mi=-1, ma=-1):
     nsegs = []
+    if ma == -1:
+        ma = max(max(s) for s in segments)
+    if mi == -1:
+        mi = min(min(s) for s in segments)
     for seg in segments:
         if len(seg) > 0:
             nsegs.append(normalize(seg, mi, ma))

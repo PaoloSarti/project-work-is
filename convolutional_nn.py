@@ -4,7 +4,7 @@ from keras.models import Sequential
 from keras.layers import Dense, Conv1D, MaxPool1D, BatchNormalization, Dropout, Flatten, Activation
 from keras.utils.np_utils import to_categorical
 from keras.optimizers import RMSprop
-from fetchdata import loadStratifiedDataset, cachedDatalabels
+from fetchdata import loadStratifiedDataset, cachedDatalabels, normalizeSegments, maxMinSegments
 from utils import class_weights_max, label_names, print_parameters
 from training import fitValidate, predict_test, cross_validation_acc, pad_reshape
 import numpy as np
@@ -26,7 +26,7 @@ model_filename = 'conv_weights.h5'          # Weights filename to store the best
 learning_rate = 0.00001
 labels = label_names(n_classes)             # Names of the classes
 cache = True                                # Cache on the filesystem the prepared data (improve drastically the performance for subsequent runs with the same parameters)
-verbose = False                             
+verbose = True                             
 n_conv_layers = 3                           # How many hidden convolutional layers (Conv, MaxPool, BatchNorm, Dropout) to use
 transitions = True                          # Consider also the same number of seconds before the start of the sequence
 crossvalidate = False                       # Cross validation on the entire dataset (mutually exclusive with compare_individuals). Currently not correct...
@@ -77,6 +77,7 @@ elif compare_individuals:
                                         validation=False,
                                         transitions=transitions,
                                         verbose=verbose)
+    X_test = normalizeSegments(X_test)
 else:
     (X_train, y_train), (X_val, y_val), (X_test, y_test) = loadStratifiedDataset(filenames,
                                                                                 aggregate,

@@ -12,8 +12,8 @@ import pydotplus
 
 
 #---------------------------Parameters-------------------------------------
-filenames = ['../crunched_data/233_ff.csv', '../crunched_data/239_ff.csv']
-pdffile = '233_239.pdf'
+filenames =  ['../crunched_data/233_ff.csv','../crunched_data/239_ff.csv']
+pdffile = '233_239_pad.pdf'
 labels = ['Awake','Nrem','Rem']
 crit = 'gini'
 min_split = 5
@@ -54,13 +54,22 @@ print('Confusion matrix')
 cm = confusion_matrix(testLabels,predicted)
 print_cm(cm, labels)
 
-def print_pdf(classifier, filename, csv_filename):
+def features_names_pad(csv_filename, pad_prev):
+    prev_cur = ['Prev', 'Cur']
+    names = csv_attributes(csv_filename)[:-1]   #skip the class
+    if not pad_prev:
+        return names
+    else:
+        names2 = names + names
+        return list(map(lambda e : e[1] + str(prev_cur[e[0] // len(names)]), enumerate(names2)))
+
+def print_pdf(classifier, filename, csv_filename, pad_prev):
     'Print the decision tree on pdf'
     dot_data = tree.export_graphviz(classifier,
                                     out_file=None,
-                                    feature_names=csv_attributes(csv_filename)[:-1],
+                                    feature_names=  features_names_pad(csv_filename, pad_prev),  #csv_attributes(csv_filename)[:-1]
                                     class_names=labels) 
     graph = pydotplus.graph_from_dot_data(dot_data) 
     graph.write_pdf(filename)
 
-#print_pdf(classifier,pdffile, filenames[0])
+print_pdf(classifier,pdffile, filenames[0], pad_prev)
