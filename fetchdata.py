@@ -25,8 +25,7 @@ def csv_attributes(filename, delim=','):
     '''
     with open(filename) as f:
         reader = csv.DictReader(f, delimiter=delim)
-        fieldnames = reader.fieldnames
-        return fieldnames
+        return reader.fieldnames
 
 def rawdataIterator(filenames, n=-1, delim='\t'):
     """
@@ -38,9 +37,11 @@ def rawdataIterator(filenames, n=-1, delim='\t'):
     for filename in filenames:
         with open(filename) as f:
             reader = csv.DictReader(f, delimiter=delim)
+            hypnoName = next(f for f in reader.fieldnames if "Hypnogm" in f)
+            eegName = next(f for f in reader.fieldnames if "EEG" in f)
             for row in reader:
-                eeg = float(row['1 EEG'])
-                hypno = int(float(row['10 Hypnogm']))
+                eeg = float(row[eegName])
+                hypno = int(float(row[hypnoName]))
                 yield (eeg, hypno)
                 i += 1
                 if i == n:

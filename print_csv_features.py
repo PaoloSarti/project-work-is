@@ -1,9 +1,11 @@
 # Script that extracts features 
 
+import sys
 import statistics as st
 from fetchdata import rawdataIterator, segmentIterator
 from utils import rfft_amp_phase, max_ampl_freq, ampl_freq_range
 from functools import partial
+import getopt
 
 def printCsvSegmentsFreqDict(filenames, seg_fns, freq_fns):
     '''
@@ -34,6 +36,22 @@ def printCsvSegmentsFreqDict(filenames, seg_fns, freq_fns):
 
 def main():
     filenames = ['../SleepEEG/rt 233_180511(1).txt','../SleepEEG/rt 233_180511(2).txt'] #['../SleepEEG/rt 239_310511(1).txt', '../SleepEEG/rt 239_310511(2).txt' ]  
+
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], 'f:h')
+    except getopt.GetoptError as err:
+        print(err)
+        sys.exit(2)
+    for o, a in opts:
+        if o == '-f':
+            filenames = a.split(',')
+        elif o == '-h':
+            print('''USAGE: python print_csv_features.py [-f <filenames>] [-h] 
+            -f: comma-separated file names to process (into a single file)
+            -h: show this help and quit.
+            ''')
+            sys.exit()
+
     max_theta = partial(ampl_freq_range, lowcut=5, highcut=10, aggr_fn=max) #theta wave, between 5 to 10 Hz
     max_delta = partial(ampl_freq_range, lowcut=0, highcut=4, aggr_fn=max) #delta wave, between 0 to 4 Hz
     seg_features = {'SegmentLength':len,
