@@ -14,32 +14,34 @@ import pydotplus
 
 #---------------------------Parameters-------------------------------------
 filenames =  ['../crunched_data/233_ff.csv','../crunched_data/239_ff.csv']
-pdffile = '233_239_pad.pdf'
+pdffile = None
 labels = ['Awake','Nrem','Rem']
 crit = 'gini'
 min_split = 5
 max_depth = 5
-test_individuals = False
+test_provided = False
+test_filenames = []
 pad_prev = False
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], 'f:o:pih')
+    opts, args = getopt.getopt(sys.argv[1:], 'f:o:pt:h')
 except getopt.GetoptError as err:
     print(err)
     sys.exit(2)
 for o, a in opts:
     if o == '-f':
         filenames = a.split(',')
-    if o == '-i':
-        test_individuals = True
+    if o == '-t':
+        test_provided = True
+        test_filenames = a.split(',')
     if o == '-o':
         pdffile = a
     if o == '-p':
         pad_prev = True
     elif o == '-h':
-        print('''USAGE: python decision_tree_test.py [-f <filenames>] [-i] [-o] [-p] [-h] 
+        print('''USAGE: python decision_tree_test.py [-f <filenames>] [-t <filenames>] [-o] [-p] [-h] 
         -f: comma-separated file names to process
-        -i: test individuals (currently works only with 2 files)
+        -t: provide files for testing
         -o: name of the pdf outfile of the decision tree
         -p: pad the previous statistics also
         -h: show this help and quit.
@@ -50,9 +52,9 @@ print('Parameters')
 print_parameters('\t', filenames=filenames, criterion=crit, min_samples_split=min_split, max_depth=max_depth)
 
 #------------------------- Load datasets----------------------------------
-if test_individuals:
-    (trainData, trainLabels) = load_cols(filenames[:1], pad_prev=pad_prev)
-    (testData, testLabels) = load_cols(filenames[1:], pad_prev=pad_prev)
+if test_provided:
+    (trainData, trainLabels) = load_cols(filenames, pad_prev=pad_prev) #filenames[:1]
+    (testData, testLabels) = load_cols(test_filenames, pad_prev=pad_prev) #filenames[1:]
 else:
     (trainData,trainLabels), (testData, testLabels) = load_cols_train_test(filenames, perc_train=0.7, pad_prev=pad_prev) #load_segment_statistics_train_test(filenames, perc_train=0.8)
 
@@ -85,8 +87,7 @@ def features_names_pad(csv_filename, pad_prev):
     if not pad_prev:
         return names
     else:
-        names2 = names + names
-        return list(map(lambda e : e[1] + str(prev_cur[e[0] // len(names)]), enumerate(names2)))
+        return [e[1]+str(prev_cur[e[0] // len(names)]) for e in enumerate(names + names)]
 
 def print_pdf(classifier, filename, csv_filename, pad_prev):
     'Print the decision tree on pdf'
@@ -97,4 +98,5 @@ def print_pdf(classifier, filename, csv_filename, pad_prev):
     graph = pydotplus.graph_from_dot_data(dot_data) 
     graph.write_pdf(filename)
 
-print_pdf(classifier,pdffile, filenames[0], pad_prev)
+if pdffile != None:
+    print_pdf(classifier,pdffile, filenames[0], pad_prev)
