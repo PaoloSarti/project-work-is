@@ -27,6 +27,10 @@ def aggregate(array, n=1, fn=st.mean):
         aggregated.append(m)
     return aggregated
 
+def squared_differences_prev(array):
+    np_a = np.array(array)
+    return (np_a[1:]-np_a[:-1])**2
+
 def normalize(l, mi=-1, ma=-1):
     if mi == -1:
         mi = min(l)

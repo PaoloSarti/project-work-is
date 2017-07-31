@@ -14,7 +14,7 @@ from collections import deque
 import json
 from os import path
 import hashlib
-from utils import rfft_amp_phase, plot_amp_phase, join_args, butter_bandpass_filter, downsample
+from utils import rfft_amp_phase, plot_amp_phase, join_args, butter_bandpass_filter, downsample, squared_differences_prev
 
 # fix random seed for reproducibility
 np.random.seed(7)
@@ -329,15 +329,24 @@ def visualizeResReduction(filenames, n=-1, res=1):
     segn = normalize(data)
     visualize(segn, 0.002*res)
 
-def visualizeSeconds(filenames, n=-1, res=1, seconds=-1):
+def visualizeSeconds(filenames, n=-1, res=1, seconds=-1, norm = False):
     dataLabels = rawdataIterator(filenames, n)
     if res != 1:
         dataLabels = reduceResolution(dataLabels, res)
     segmentsLabels = segmentIterator(dataLabels,int(seconds/(0.002*res)))
     for (seg, label) in segmentsLabels:
         print('Label: ' + str(label))
-        segn = normalize(seg)
-        visualize(segn,0.002*res)
+        if norm:
+            seg = normalize(seg)
+        visualize(seg,0.002*res)
+
+def visualizeSquaredDifferences(filenames, seconds):
+    dataLabels = rawdataIterator(filenames)
+    segmentsLabels = segmentIterator(dataLabels,int(seconds/(0.002)))
+    for (seg, label) in segmentsLabels:
+        print('Label: ' + str(label))
+        diff = squared_differences_prev(seg)
+        visualize(diff,0.002)
 
 def visualizeSecondsAmpPhase(filenames, n=-1, aggr=1, seconds=-1):
     dataLabels = rawdataIterator(filenames, n)
@@ -353,7 +362,7 @@ def visualizeSecondsAmpPhase(filenames, n=-1, aggr=1, seconds=-1):
         a, p = a[1:], p[1:]       #throw away the freq 0
         print('Length of ft: '+str(len(a)))
         print('Mean amplitude: '+ str(st.mean(a)))
-        print('Stdev amplitude: '+ str(st.stdev(a)))
+        print('Stdev amplitude: '+ str(st.pstdev(a)))
         #print('Mean phase: '+str(st.mean(p)))
         #print('Stdev phase: '+str(st.stdev(p)))
         plot_amp_phase(a,p)
@@ -416,7 +425,8 @@ def main():
     #printCsvSegmentsReduceRes([filename,filename1],n, r)
     #visualizeResReduction(filenames,n,r)
     #visualizeSeconds(filenames,n,r,seconds)
-    visualizeSecondsAmpPhase(filenames, n, r, seconds)
+    visualizeSquaredDifferences(filenames, seconds)
+    #visualizeSecondsAmpPhase(filenames, n, r, seconds)
     #visualizeSecondsFiltered(filenames, n, r, seconds, 0.5, 50)
     #printCsvSegmentsFreq(filenames,n)
 
