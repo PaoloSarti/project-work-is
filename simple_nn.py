@@ -12,22 +12,25 @@ import numpy as np
 import sys
 
 #---------------------------Parameters-------------------------------------
-filenames = ['../crunched_data/233_ff.csv', '../crunched_data/239_ff.csv']
+files = ['233_day.csv', '239_day.csv', '243_day.csv', '258_day.csv', '259_day.csv', '268_day.csv', '279_day.csv', '305_day.csv', '334_day.csv', '344_day.csv']
+#['233_night.csv', '239_night.csv', '243_night.csv', '258_night.csv', '259_night.csv', '268_night.csv', '279_night.csv', '305_night.csv', '334_night.csv', '344_night.csv']
+basedir = '../crunched_data/'
+filenames = [basedir + f for f in files]
 learning_rate = 0.0001
-patience = 1000
+patience = 100
 n_hidden_layers = 3
 activation = 'relu'
 resume = False
 neurons = 20
 pad_prev = True
 neurons = 2 * neurons if pad_prev else neurons #double the neuron count if the inputs are doubled
-compare_individuals = False
-cols = ['SegmentStdDev', 'FreqAmplAvg', 'FreqAmplMaxFreq', 'SegmentLength', 'FreqAmplStdev', 'SegmentMax', 'SegmentMin', 'FreqAmplMin']
+compare_individuals = True
+cols = None #['SegmentStdDev', 'FreqAmplAvg', 'FreqAmplMaxFreq', 'SegmentLength', 'FreqAmplStdev', 'SegmentMax', 'SegmentMin', 'FreqAmplMin']
 
 #------------------------- Load datasets----------------------------------
 if compare_individuals:
-    (trainData,trainLabels), (validData, validLabels) = load_cols_train_test(filenames[:1], pad_prev=pad_prev, cols=cols)
-    (testData, testLabels) = load_cols(filenames[1:], pad_prev=pad_prev, cols=cols)
+    (trainData,trainLabels), (validData, validLabels) = load_cols_train_test(filenames[:-1], pad_prev=pad_prev, cols=cols)
+    (testData, testLabels) = load_cols(filenames[-1:], pad_prev=pad_prev, cols=cols)
 else:
     (trainData,trainLabels), (validData, validLabels), (testData, testLabels) = load_cols_train_valid_test(filenames, perc_train=0.5, perc_valid=0.2, pad_prev=pad_prev, cols=cols)
 
