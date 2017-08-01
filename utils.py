@@ -28,8 +28,25 @@ def aggregate(array, n=1, fn=st.mean):
     return aggregated
 
 def squared_differences_prev(array):
+    'Calculates the squared differences between each value and the next'
     np_a = np.array(array)
     return (np_a[1:]-np_a[:-1])**2
+
+def abs_differences_prev(array):
+    'Calculates the absolute differences between each value and the next'
+    np_a = np.array(array)
+    return np.abs(np_a[1:]-np_a[:-1])
+
+def diff_thres_idxs(l,thres):
+    'Calculates the indexes at which the absolute difference between the current and the next value is more than a threshold'
+    return [i for i in range(len(l)-1) if np.abs(l[i+1]-l[i])>thres]
+
+def local_maxima_idxs(l):
+    'Calculates the indexes of local maxima'
+    return [i for i in range(1, len(l)-1) if l[i-1]<l[i] and l[i]>l[i+1]]
+
+def smooth_thres_differences(l, thres):
+    return [((l[i],l[i+1])/2 if np.abs(l[i+1]-l[i])>thres else l[i]) for i in range(0,len(l)-1) ] + l[-1:]
 
 def normalize(l, mi=-1, ma=-1):
     if mi == -1:

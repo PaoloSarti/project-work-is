@@ -9,12 +9,13 @@ from matplotlib import pyplot as plt
 import statistics as st
 import random
 from sklearn.model_selection import train_test_split
-from utils import aggregate, normalize, to4Labels, max_ampl_freq
+from utils import aggregate, normalize, to4Labels, max_ampl_freq, smooth_thres_differences
 from collections import deque
 import json
 from os import path
 import hashlib
-from utils import rfft_amp_phase, plot_amp_phase, join_args, butter_bandpass_filter, downsample, squared_differences_prev
+from utils import rfft_amp_phase, plot_amp_phase, join_args, butter_bandpass_filter, downsample, squared_differences_prev, abs_differences_prev
+import utils
 
 # fix random seed for reproducibility
 np.random.seed(7)
@@ -338,14 +339,16 @@ def visualizeSeconds(filenames, n=-1, res=1, seconds=-1, norm = False):
         print('Label: ' + str(label))
         if norm:
             seg = normalize(seg)
-        visualize(seg,0.002*res)
+        #print(str(max(utils.abs_differences_prev(seg))))
+        #seg_s = smooth_thres_differences(seg, 0.0000001)
+        visualize(seg_s,0.002*res)
 
-def visualizeSquaredDifferences(filenames, seconds):
+def visualizeAbsoluteDifferences(filenames, seconds):
     dataLabels = rawdataIterator(filenames)
     segmentsLabels = segmentIterator(dataLabels,int(seconds/(0.002)))
     for (seg, label) in segmentsLabels:
         print('Label: ' + str(label))
-        diff = squared_differences_prev(seg)
+        diff = abs_differences_prev(seg)
         visualize(diff,0.002)
 
 def visualizeSecondsAmpPhase(filenames, n=-1, aggr=1, seconds=-1):
@@ -425,7 +428,7 @@ def main():
     #printCsvSegmentsReduceRes([filename,filename1],n, r)
     #visualizeResReduction(filenames,n,r)
     #visualizeSeconds(filenames,n,r,seconds)
-    visualizeSquaredDifferences(filenames, seconds)
+    visualizeAbsoluteDifferences(filenames, seconds)
     #visualizeSecondsAmpPhase(filenames, n, r, seconds)
     #visualizeSecondsFiltered(filenames, n, r, seconds, 0.5, 50)
     #printCsvSegmentsFreq(filenames,n)
