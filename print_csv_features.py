@@ -74,7 +74,7 @@ def printCsvSegmentsPercentileNormalizedFreqDict(filenames, seg_fns, freq_fns, l
 
 def main():
     filenames = ['../SleepEEG/rt 233_180511(1).txt'] #,'../SleepEEG/rt 233_180511(2).txt'] #['../SleepEEG/rt 239_310511(1).txt', '../SleepEEG/rt 239_310511(2).txt' ]  
-
+    norm = False
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'f:h')
     except getopt.GetoptError as err:
@@ -83,9 +83,12 @@ def main():
     for o, a in opts:
         if o == '-f':
             filenames = a.split(',')
+        if o == '-n':
+            norm = True
         elif o == '-h':
-            print('''USAGE: python print_csv_features.py [-f <filenames>] [-h] 
-            -f: comma-separated file names to process (into a single file)
+            print('''USAGE: python print_csv_features.py [-f <filenames>] [-n] [-h] 
+            -f: comma-separated file names to process (into a single output)
+            -n: normalize on an individual basis before computing the features
             -h: show this help and quit.
             ''')
             sys.exit()
@@ -104,8 +107,10 @@ def main():
                     'FreqAmplMaxFreq':max_ampl_freq,
                     'MaxTheta':max_theta,
                     'MaxDelta':max_delta}
-    #printCsvSegmentsFreqDict(filenames, seg_features, freq_features)
-    printCsvSegmentsPercentileNormalizedFreqDict(filenames, seg_features, freq_features, 0.25, 99.75)
-
+    if norm:
+        printCsvSegmentsPercentileNormalizedFreqDict(filenames, seg_features, freq_features, 0.25, 99.75)
+    else:
+        printCsvSegmentsFreqDict(filenames, seg_features, freq_features)
+    
 if __name__ == '__main__':
     main()
