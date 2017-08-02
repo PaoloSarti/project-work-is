@@ -76,7 +76,7 @@ def main():
     filenames = ['../SleepEEG/rt 233_180511(1).txt'] #,'../SleepEEG/rt 233_180511(2).txt'] #['../SleepEEG/rt 239_310511(1).txt', '../SleepEEG/rt 239_310511(2).txt' ]  
     norm = False
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'f:h')
+        opts, args = getopt.getopt(sys.argv[1:], 'f:nh')
     except getopt.GetoptError as err:
         print(err)
         sys.exit(2)
