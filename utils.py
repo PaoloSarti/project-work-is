@@ -48,6 +48,18 @@ def local_maxima_idxs(l):
 def smooth_thres_differences(l, thres):
     return [((l[i],l[i+1])/2 if np.abs(l[i+1]-l[i])>thres else l[i]) for i in range(0,len(l)-1) ] + l[-1:]
 
+def saturate_by_percentiles(x, low, high):
+    low_perc = np.percentile(x, low)
+    high_perc = np.percentile(x, high)
+    def saturate(v):
+        if v > high_perc:
+            return high_perc
+        elif v < low_perc:
+            return low_perc
+        else:
+            return v
+    return [saturate(v) for v in x]
+
 def normalize(l, mi=-1, ma=-1):
     if mi == -1:
         mi = min(l)

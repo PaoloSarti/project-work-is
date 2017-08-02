@@ -163,6 +163,27 @@ def segmentIterator(dataLabels, n = -1, cut_until_change=True, aggr=1, transitio
                 seg = aggregate(seg,aggr)
         yield (seg,prevlabel)
 
+def segment_by_label(data, labels):
+    if len(data) != len(labels):
+        raise ValueError('length of data and length of labels are different')
+    prev_label = labels[0]
+    new_data = []
+    new_labels = [labels[0]]
+    accumulator = []
+    for i in range(len(data)):
+        if labels[i] == prev_label:
+            accumulator.append(data[i])
+        else:
+            new_data.append(accumulator)
+            accumulator = [data[i]]
+            new_labels.append(labels[i])
+            prev_label = labels[i]
+    if len(accumulator) != 0:
+        new_data.append(accumulator)
+    if len(new_data) != len(new_labels):
+        raise ValueError('length of data and length of labels are different')
+    return new_data, new_labels
+
 def dataLabelsArrays(dataLabels):
     '''
     Collects the data and the labels into arrays.
@@ -341,13 +362,16 @@ def visualizeSeconds(filenames, n=-1, res=1, seconds=-1, norm = False):
             seg = normalize(seg)
         #print(str(max(utils.abs_differences_prev(seg))))
         #seg_s = smooth_thres_differences(seg, 0.0000001)
-        visualize(seg_s,0.002*res)
+        visualize(seg, 0.002*res)
+        #seg = utils.saturate_by_percentiles(seg, 0.25, 99.75)
+        #visualize(seg, 0.002*res)
 
 def visualizeAbsoluteDifferences(filenames, seconds):
     dataLabels = rawdataIterator(filenames)
     segmentsLabels = segmentIterator(dataLabels,int(seconds/(0.002)))
     for (seg, label) in segmentsLabels:
         print('Label: ' + str(label))
+        #print('Upper and lower percentiles: %f %f' % (np.percentile(seg, 99.5), np.percentile(seg, 0.5)))
         diff = abs_differences_prev(seg)
         visualize(diff,0.002)
 
@@ -427,8 +451,8 @@ def main():
     #printCsvSegmentsIterator([filename,filename1],n)
     #printCsvSegmentsReduceRes([filename,filename1],n, r)
     #visualizeResReduction(filenames,n,r)
-    #visualizeSeconds(filenames,n,r,seconds)
-    visualizeAbsoluteDifferences(filenames, seconds)
+    visualizeSeconds(filenames,n,r,seconds)
+    #visualizeAbsoluteDifferences(filenames, seconds)
     #visualizeSecondsAmpPhase(filenames, n, r, seconds)
     #visualizeSecondsFiltered(filenames, n, r, seconds, 0.5, 50)
     #printCsvSegmentsFreq(filenames,n)

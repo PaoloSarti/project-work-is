@@ -3,9 +3,12 @@
 import sys
 import statistics as st
 from fetchdata import rawdataIterator, segmentIterator
+import fetchdata
 from utils import rfft_amp_phase, max_ampl_freq, ampl_freq_range
 from functools import partial
 import getopt
+import numpy as np
+import utils
 
 def printCsvSegmentsFreqDict(filenames, seg_fns, freq_fns):
     '''
@@ -34,8 +37,43 @@ def printCsvSegmentsFreqDict(filenames, seg_fns, freq_fns):
         line += str(label)
         print(line)
 
+def printCsvSegmentsPercentileNormalizedFreqDict(filenames, seg_fns, freq_fns, low, high):
+    '''
+    Prints to stdout csv (comma-separated) output of the features computed on the temporal and frequency domain
+    by the two dictionaries {name:function}, after a normalization step on the whole signal with the low and high percentiles
+    '''
+    header = ''
+    for fn_name in seg_fns.keys():
+        header += fn_name+','
+    for fn_name in freq_fns.keys():
+        header += fn_name+','
+    header += 'Label'
+    print(header)
+    dataLabels = rawdataIterator(filenames)
+    data, labels = fetchdata.dataLabelsArrays(dataLabels)
+    #print('Upper and lower percentiles: %f %f' % (np.percentile(data, 99.5), np.percentile(data, 0.5)))
+    #print('Max %f, min %f before saturation' % (max(data), min(data)))
+    data = utils.saturate_by_percentiles(data, low, high)
+    #print('Max %f, min %f after saturation' % (max(data), min(data)))
+    data = utils.normalize(data)
+    #print('Max %f, min %f after normalization' % (max(data), min(data)))
+    segments, labels = fetchdata.segment_by_label(data, labels)
+    for (seg, label) in zip(segments, labels):
+        line = ''
+        for fn in seg_fns.values():
+            v = fn(seg)
+            line += str(v)+','
+        a,p = rfft_amp_phase(seg)
+        a = a[1:]   #ignore the first value, that is always extremely high (freq 0)
+        for fn in freq_fns.values():
+            v = fn(a)
+            line += str(v)+','
+        line += str(label)
+        print(line)
+
+
 def main():
-    filenames = ['../SleepEEG/rt 233_180511(1).txt','../SleepEEG/rt 233_180511(2).txt'] #['../SleepEEG/rt 239_310511(1).txt', '../SleepEEG/rt 239_310511(2).txt' ]  
+    filenames = ['../SleepEEG/rt 233_180511(1).txt'] #,'../SleepEEG/rt 233_180511(2).txt'] #['../SleepEEG/rt 239_310511(1).txt', '../SleepEEG/rt 239_310511(2).txt' ]  
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'f:h')
@@ -66,7 +104,8 @@ def main():
                     'FreqAmplMaxFreq':max_ampl_freq,
                     'MaxTheta':max_theta,
                     'MaxDelta':max_delta}
-    printCsvSegmentsFreqDict(filenames, seg_features, freq_features)
+    #printCsvSegmentsFreqDict(filenames, seg_features, freq_features)
+    printCsvSegmentsPercentileNormalizedFreqDict(filenames, seg_features, freq_features, 0.25, 99.75)
 
 if __name__ == '__main__':
     main()
