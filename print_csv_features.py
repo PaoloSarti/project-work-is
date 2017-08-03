@@ -114,7 +114,7 @@ def main():
                     'FreqAmplMaxFreq':max_ampl_freq,
                     'MaxTheta':max_theta,
                     'MaxDelta':max_delta}
-    if norm || standardize:
+    if norm or standardize:
         printCsvSegmentsPercentileNormalizedFreqDict(filenames, seg_features, freq_features, 0.25, 99.75, standardize)
     else:
         printCsvSegmentsFreqDict(filenames, seg_features, freq_features)
