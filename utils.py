@@ -90,6 +90,9 @@ def to4Labels(prevLabel, curLabel):
            '11':1}   #nrem-nrem (not found, but useful at the start)
     return dic[str(prevLabel)+str(curLabel)]
 
+def lines_to_list(filename):
+    return [l[:-1] for l in open(filename)]
+
 def label_names(n_classes=3):
     return ['awake','nrem','rem'] if n_classes == 3 else ['nrem-awake','awake-nrem','nrem-rem', 'rem-awake']
 

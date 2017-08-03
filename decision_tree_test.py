@@ -9,12 +9,14 @@ from sklearn.metrics import accuracy_score
 from sklearn.metrics import classification_report
 from sklearn.model_selection import cross_val_score
 from fetchdata import load_cols_train_test, csv_attributes, load_cols
-from utils import print_cm, print_parameters
+from utils import print_cm, print_parameters, lines_to_list
 import pydotplus
 
 def main():
     #---------------------------Parameters-------------------------------------
-    filenames =  ['../crunched_data/233_ff.csv','../crunched_data/239_ff.csv']
+    basedir = '../crunched_data/'
+    specified_basedir = False
+    filenames =  ['233_day.csv','239_day.csv']
     pdffile = None
     labels = ['Awake','Nrem','Rem']
     crit = 'gini'
@@ -25,7 +27,7 @@ def main():
     pad_prev = False
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'f:o:pt:h')
+        opts, args = getopt.getopt(sys.argv[1:], 'f:o:b:pl:t:h')
     except getopt.GetoptError as err:
         print(err)
         sys.exit(2)
@@ -39,16 +41,27 @@ def main():
             pdffile = a
         if o == '-p':
             pad_prev = True
+        if o == '-l':
+            filenames = lines_to_list(a)
+        if o == '-b':
+            specified_basedir = True
+            basedir = a
         elif o == '-h':
-            print('''USAGE: python decision_tree_test.py [-f <filenames>] [-t <filenames>] [-o] [-p] [-h] 
+            print('''USAGE: python decision_tree_test.py [-f <filenames>] [-t <filenames>] [-b <basedirectory>] [-l <filename>] [-o] [-p] [-h] 
             -f: comma-separated file names to process
+            -b: specify the directory in which to find the files
             -t: provide files for testing
             -o: name of the pdf outfile of the decision tree
+            -l: file that contains a list of filenames to load (overrides -f)
             -p: pad the previous statistics also
             -h: show this help and quit.
             ''')
             sys.exit()
 
+    if specified_basedir:
+        filenames = [basedir + f for f in filenames]
+        test_filenames = [basedir + f for f in test_filenames]
+    
     print('Parameters')
     print_parameters('\t', filenames=filenames, criterion=crit, min_samples_split=min_split, max_depth=max_depth)
 

@@ -13,8 +13,8 @@ import sys
 
 #---------------------------Parameters-------------------------------------
 files = ['233_day.csv', '239_day.csv', '243_day.csv', '258_day.csv', '259_day.csv', '268_day.csv', '279_day.csv', '305_day.csv', '334_day.csv', '344_day.csv']
-#['233_night.csv', '239_night.csv', '243_night.csv', '258_night.csv', '259_night.csv', '268_night.csv', '279_night.csv', '305_night.csv', '334_night.csv', '344_night.csv']
-basedir = '../crunched_data/'
+#'233_night.csv', '239_night.csv', '243_night.csv', '258_night.csv', '259_night.csv', '268_night.csv', '279_night.csv', '305_night.csv', '334_night.csv', '344_night.csv']
+basedir = '../crunched_data/normalized/'
 filenames = [basedir + f for f in files]
 learning_rate = 0.0001
 patience = 100
