@@ -37,7 +37,7 @@ def printCsvSegmentsFreqDict(filenames, seg_fns, freq_fns):
         line += str(label)
         print(line)
 
-def printCsvSegmentsPercentileNormalizedFreqDict(filenames, seg_fns, freq_fns, low, high):
+def printCsvSegmentsPercentileNormalizedFreqDict(filenames, seg_fns, freq_fns, low, high, standardize=False):
     '''
     Prints to stdout csv (comma-separated) output of the features computed on the temporal and frequency domain
     by the two dictionaries {name:function}, after a normalization step on the whole signal with the low and high percentiles
@@ -55,7 +55,10 @@ def printCsvSegmentsPercentileNormalizedFreqDict(filenames, seg_fns, freq_fns, l
     #print('Max %f, min %f before saturation' % (max(data), min(data)))
     data = utils.saturate_by_percentiles(data, low, high)
     #print('Max %f, min %f after saturation' % (max(data), min(data)))
-    data = utils.normalize(data)
+    if standardize:
+        data = utils.standardize(data)
+    else:
+        data = utils.normalize(data)
     #print('Max %f, min %f after normalization' % (max(data), min(data)))
     segments, labels = fetchdata.segment_by_label(data, labels)
     for (seg, label) in zip(segments, labels):
@@ -75,8 +78,9 @@ def printCsvSegmentsPercentileNormalizedFreqDict(filenames, seg_fns, freq_fns, l
 def main():
     filenames = ['../SleepEEG/rt 233_180511(1).txt'] #,'../SleepEEG/rt 233_180511(2).txt'] #['../SleepEEG/rt 239_310511(1).txt', '../SleepEEG/rt 239_310511(2).txt' ]  
     norm = False
+    standardize = False
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'f:nh')
+        opts, args = getopt.getopt(sys.argv[1:], 'f:nsh')
     except getopt.GetoptError as err:
         print(err)
         sys.exit(2)
@@ -85,10 +89,13 @@ def main():
             filenames = a.split(',')
         if o == '-n':
             norm = True
+        if o == '-s':
+            standardize = True
         elif o == '-h':
             print('''USAGE: python print_csv_features.py [-f <filenames>] [-n] [-h] 
             -f: comma-separated file names to process (into a single output)
-            -n: normalize on an individual basis before computing the features
+            -n: normalize between 0 and 1 on an individual basis before computing the features
+            -s: standardize instead of normalizing between 0 and 1
             -h: show this help and quit.
             ''')
             sys.exit()
@@ -107,8 +114,8 @@ def main():
                     'FreqAmplMaxFreq':max_ampl_freq,
                     'MaxTheta':max_theta,
                     'MaxDelta':max_delta}
-    if norm:
-        printCsvSegmentsPercentileNormalizedFreqDict(filenames, seg_features, freq_features, 0.25, 99.75)
+    if norm || standardize:
+        printCsvSegmentsPercentileNormalizedFreqDict(filenames, seg_features, freq_features, 0.25, 99.75, standardize)
     else:
         printCsvSegmentsFreqDict(filenames, seg_features, freq_features)
     

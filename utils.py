@@ -70,6 +70,11 @@ def normalize(l, mi=-1, ma=-1):
     else:
         return [(d - mi)/(ma - mi) for d in l]
 
+def standardize(l):
+    lp = np.array(l)
+    return (l-np.mean(l))/np.std(l)
+
+
 def normalizeColumns(data):
     npdata = np.array(data)
     cols = [npdata[:,j] for j in range(npdata.shape[1])]
