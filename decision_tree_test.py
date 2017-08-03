@@ -14,7 +14,7 @@ import pydotplus
 
 def main():
     #---------------------------Parameters-------------------------------------
-    basedir = '../crunched_data/'
+    basedir = '' #'../crunched_data/' (for example)
     specified_basedir = False
     filenames =  ['233_day.csv','239_day.csv']
     pdffile = None
@@ -25,9 +25,11 @@ def main():
     test_provided = False
     test_filenames = []
     pad_prev = False
+    split = True
+    N = -1
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'f:o:b:pl:t:h')
+        opts, args = getopt.getopt(sys.argv[1:], 'f:o:b:pl:t:N:h')
     except getopt.GetoptError as err:
         print(err)
         sys.exit(2)
@@ -46,11 +48,14 @@ def main():
         if o == '-b':
             specified_basedir = True
             basedir = a
+        if o == '-N':
+            N = int(a)
+            split = False
         elif o == '-h':
-            print('''USAGE: python decision_tree_test.py [-f <filenames>] [-t <filenames>] [-b <basedirectory>] [-l <filename>] [-o] [-p] [-h] 
-            -f: comma-separated file names to process
-            -b: specify the directory in which to find the files
-            -t: provide files for testing
+            print('''USAGE: python decision_tree_test.py [-f <filenames>] [-t <filenames> | -l <filename> ] [-b <basedirectory>] [-o] [-N] [-p] [-h] 
+            -f: comma-separated file names to process (the basedirectory (-b) is added if indicated)
+            -b: specify the directory in which to find the specified files
+            -t: provide files for testing (the basedirectory (-b) is added if indicated)
             -o: name of the pdf outfile of the decision tree
             -l: file that contains a list of filenames to load (overrides -f)
             -p: pad the previous statistics also
@@ -69,8 +74,11 @@ def main():
     if test_provided:
         (trainData, trainLabels) = load_cols(filenames, pad_prev=pad_prev) #filenames[:1]
         (testData, testLabels) = load_cols(test_filenames, pad_prev=pad_prev) #filenames[1:]
-    else:
-        (trainData,trainLabels), (testData, testLabels) = load_cols_train_test(filenames, perc_train=0.7, pad_prev=pad_prev) #load_segment_statistics_train_test(filenames, perc_train=0.8)
+    elif split:
+        (trainData,trainLabels), (testData, testLabels) = load_cols_train_test(filenames, perc_train=0.7, pad_prev=pad_prev)
+    elif N > -1:
+        (trainData, trainLabels) = load_cols(filenames[:N], pad_prev=pad_prev)
+        (testData, testLabels) = load_cols(filenames[N:], pad_prev=pad_prev)
 
     #---------------------Decision Tree Classifier----------------------------
     classifier = tree.DecisionTreeClassifier(criterion=crit,min_samples_split=min_split,max_depth=max_depth)
