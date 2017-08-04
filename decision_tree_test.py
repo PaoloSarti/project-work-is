@@ -140,7 +140,9 @@ def main():
             classifier, train_results, test_results = decision_tree_classify(trainData, trainLabels,
                                                                             testData, testLabels,
                                                                             crit, min_split, max_depth)
-            print('Test on individual %d train on the others' % i)
+            # Very Ad Hoc
+            individual = filenames[2*i].split('/')[-1].split('_')[0]
+            print('Test on individual %d (%s) train on the others' % (i,individual))
             print_results(train_results, test_results, labels)
     else:
         if test_provided:
