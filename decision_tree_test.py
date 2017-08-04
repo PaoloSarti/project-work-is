@@ -11,6 +11,61 @@ from sklearn.model_selection import cross_val_score
 from fetchdata import load_cols_train_test, csv_attributes, load_cols
 from utils import print_cm, print_parameters, lines_to_list
 import pydotplus
+from functools import reduce
+
+def print_results(train_results, test_results, labels):
+    (train_acc, train_report, train_cm) = train_results
+    (test_acc, test_report, test_cm) = test_results
+    print('On training set')
+    print('Accuracy: %f' % train_acc)
+    print(train_report)
+    print('Confusion matrix')
+    print_cm(train_cm, labels)
+    print()
+    print('On test set')
+    print('Accuracy: %f' % test_acc)
+    print(test_report)
+    print('Confusion matrix')
+    print_cm(test_cm, labels)
+    print()
+
+def features_names_pad(csv_filename, pad_prev):
+    prev_cur = ['Prev', 'Cur']
+    names = csv_attributes(csv_filename)[:-1]   #skip the class
+    if not pad_prev:
+        return names
+    else:
+        return [e[1]+str(prev_cur[e[0] // len(names)]) for e in enumerate(names + names)]
+
+def print_pdf(classifier, filename, features_names, labels):
+    'Print the decision tree on pdf'
+    dot_data = tree.export_graphviz(classifier,
+                                    out_file=None,
+                                    feature_names= features_names,  
+                                    class_names=labels) 
+    graph = pydotplus.graph_from_dot_data(dot_data) 
+    graph.write_pdf(filename)
+
+def decision_tree_classify(trainData, trainLabels, testData, testLabels, crit, min_split, max_depth):
+    classifier = tree.DecisionTreeClassifier(criterion=crit,min_samples_split=min_split,max_depth=max_depth)
+    classifier.fit(trainData, trainLabels)
+    trainPred = classifier.predict(trainData)
+    predicted = classifier.predict(testData)
+
+    train_acc = accuracy_score(trainLabels, trainPred)
+    train_report = classification_report(trainLabels, trainPred)
+    train_cm = confusion_matrix(trainLabels,trainPred)
+
+    test_acc = accuracy_score(testLabels, predicted)
+    test_report = classification_report(testLabels, predicted)
+    test_cm = confusion_matrix(testLabels,predicted)
+
+    return classifier, (train_acc, train_report, train_cm), (test_acc, test_report, test_cm)
+
+def cross_validation_datasets(folds, test_idx):
+    train_folds = [folds[i] for i in range(len(folds)) if i != test_idx]
+    train_data, train_labels = reduce(lambda a,b: (a[0]+b[0], a[1]+b[1]), train_folds, ([],[])) #0->data, 1->labels
+    return (train_data, train_labels), (folds[test_idx][0], folds[test_idx][1])
 
 def main():
     #---------------------------Parameters-------------------------------------
@@ -27,9 +82,10 @@ def main():
     pad_prev = False
     split = True
     N = -1
+    cross_validate_individuals = False
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'f:o:b:pl:t:N:h')
+        opts, args = getopt.getopt(sys.argv[1:], 'f:o:b:pcl:t:N:h')
     except getopt.GetoptError as err:
         print(err)
         sys.exit(2)
@@ -51,14 +107,18 @@ def main():
         if o == '-N':
             N = int(a)
             split = False
+        if o == '-c':
+            cross_validate_individuals = True
         elif o == '-h':
-            print('''USAGE: python decision_tree_test.py [-f <filenames>] [-t <filenames> | -l <filename> ] [-b <basedirectory>] [-o] [-N] [-p] [-h] 
+            print('''USAGE: python decision_tree_test.py [-f <filenames>] [-t <filenames> | -l <filename> ] [-b <basedirectory>] [-c] [-o] [-N] [-p] [-h] 
             -f: comma-separated file names to process (the basedirectory (-b) is added if indicated)
             -b: specify the directory in which to find the specified files
             -t: provide files for testing (the basedirectory (-b) is added if indicated)
             -o: name of the pdf outfile of the decision tree
             -l: file that contains a list of filenames to load (overrides -f)
             -p: pad the previous statistics also
+            -N: split the files provided in N to use for training and tot-N for testing (ignores -t)
+            -c: cross validate on the individuals from the filenames provided with -f or -l (ignores -t, -N)
             -h: show this help and quit.
             ''')
             sys.exit()
@@ -68,61 +128,40 @@ def main():
         test_filenames = [basedir + f for f in test_filenames]
     
     print('Parameters')
-    print_parameters('\t', filenames=filenames, criterion=crit, min_samples_split=min_split, max_depth=max_depth)
+    print_parameters('\t', filenames=filenames, criterion=crit, min_samples_split=min_split, max_depth=max_depth, pad_prev=pad_prev, cross_validate_individuals=cross_validate_individuals)
 
-    #------------------------- Load datasets----------------------------------
-    if test_provided:
-        (trainData, trainLabels) = load_cols(filenames, pad_prev=pad_prev) #filenames[:1]
-        (testData, testLabels) = load_cols(test_filenames, pad_prev=pad_prev) #filenames[1:]
-    elif split:
-        (trainData,trainLabels), (testData, testLabels) = load_cols_train_test(filenames, perc_train=0.7, pad_prev=pad_prev)
-    elif N > -1:
-        (trainData, trainLabels) = load_cols(filenames[:N], pad_prev=pad_prev)
-        (testData, testLabels) = load_cols(filenames[N:], pad_prev=pad_prev)
+    if cross_validate_individuals:
+        #------------------------- Load datasets----------------------------------
+        n_individuals = len(filenames) // 2
+        folds = [load_cols([filenames[i],filenames[i+1]], pad_prev) for i in range(0, len(filenames), 2)]    # day and night
+        for i in reversed(range(n_individuals)):
+            (trainData, trainLabels),(testData, testLabels) = cross_validation_datasets(folds, i)
+            #--------------------------Classify--------------------------------------
+            classifier, train_results, test_results = decision_tree_classify(trainData, trainLabels,
+                                                                            testData, testLabels,
+                                                                            crit, min_split, max_depth)
+            print('Test on individual %d train on the others' % i)
+            print_results(train_results, test_results, labels)
+    else:
+        if test_provided:
+            (trainData, trainLabels) = load_cols(filenames, pad_prev=pad_prev) #filenames[:1]
+            (testData, testLabels) = load_cols(test_filenames, pad_prev=pad_prev) #filenames[1:]
+        elif split:
+            (trainData,trainLabels), (testData, testLabels) = load_cols_train_test(filenames, perc_train=0.7, pad_prev=pad_prev)
+        elif N > -1:
+            (trainData, trainLabels) = load_cols(filenames[:N], pad_prev=pad_prev)
+            (testData, testLabels) = load_cols(filenames[N:], pad_prev=pad_prev)
 
-    #---------------------Decision Tree Classifier----------------------------
-    classifier = tree.DecisionTreeClassifier(criterion=crit,min_samples_split=min_split,max_depth=max_depth)
-    classifier.fit(trainData, trainLabels)
-    trainPred = classifier.predict(trainData)
-    predicted = classifier.predict(testData)
+        #--------------------------Classify--------------------------------------
+        classifier, train_results, test_results = decision_tree_classify(trainData, trainLabels,
+                                                                        testData, testLabels,
+                                                                        crit, min_split, max_depth)
+        print_results(train_results, test_results, labels)
 
-    #------------------------Print results------------------------------------
-    print('On training set')
-    train_acc = accuracy_score(trainLabels, trainPred)
-    print('Accuracy: %f' % train_acc)
-    print(classification_report(trainLabels, trainPred))
-    print('Confusion matrix')
-    cm = confusion_matrix(trainLabels,trainPred)
-    print_cm(cm, labels)
-    print()
-    print('On test set')
-    test_acc = accuracy_score(testLabels, predicted)
-    print('Accuracy: %f' % test_acc)
-    print(classification_report(testLabels,predicted))
-    print('Confusion matrix')
-    cm = confusion_matrix(testLabels,predicted)
-    print_cm(cm, labels)
-
-    #----------------------Save tree image----------------------------------
-    def features_names_pad(csv_filename, pad_prev):
-        prev_cur = ['Prev', 'Cur']
-        names = csv_attributes(csv_filename)[:-1]   #skip the class
-        if not pad_prev:
-            return names
-        else:
-            return [e[1]+str(prev_cur[e[0] // len(names)]) for e in enumerate(names + names)]
-
-    def print_pdf(classifier, filename, csv_filename, pad_prev):
-        'Print the decision tree on pdf'
-        dot_data = tree.export_graphviz(classifier,
-                                        out_file=None,
-                                        feature_names=  features_names_pad(csv_filename, pad_prev),  #csv_attributes(csv_filename)[:-1]
-                                        class_names=labels) 
-        graph = pydotplus.graph_from_dot_data(dot_data) 
-        graph.write_pdf(filename)
-
-    if pdffile != None:
-        print_pdf(classifier,pdffile, filenames[0], pad_prev)
+        #----------------------Save tree image----------------------------------
+        if pdffile != None:
+            feature_names = features_names_pad(filenames[0], pad_prev) #csv_attributes(csv_filename)[:-1]
+            print_pdf(classifier,pdffile, feature_names, labels)
 
 if __name__ == '__main__':
     main()
