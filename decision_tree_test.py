@@ -12,6 +12,7 @@ from fetchdata import load_cols_train_test, csv_attributes, load_cols
 from utils import print_cm, print_parameters, lines_to_list
 import pydotplus
 from functools import reduce
+import numpy as np
 
 def print_results(train_results, test_results, labels):
     (train_acc, train_report, train_cm) = train_results
@@ -134,6 +135,8 @@ def main():
         #------------------------- Load datasets----------------------------------
         n_individuals = len(filenames) // 2
         folds = [load_cols([filenames[i],filenames[i+1]], pad_prev) for i in range(0, len(filenames), 2)]    # day and night
+        train_accuracies = []
+        test_accuracies = []
         for i in reversed(range(n_individuals)):
             (trainData, trainLabels),(testData, testLabels) = cross_validation_datasets(folds, i)
             #--------------------------Classify--------------------------------------
@@ -142,8 +145,12 @@ def main():
                                                                             crit, min_split, max_depth)
             # Very Ad Hoc
             individual = filenames[2*i].split('/')[-1].split('_')[0]
+            train_accuracies.append(train_results[0])
+            test_accuracies.append(test_results[0])
             print('Test on individual %d (%s) train on the others' % (i,individual))
             print_results(train_results, test_results, labels)
+        print('Mean train accuracies: %f' % np.mean(train_accuracies))
+        print('Mean test accuracies: %f' % np.mean(test_accuracies))
     else:
         if test_provided:
             (trainData, trainLabels) = load_cols(filenames, pad_prev=pad_prev) #filenames[:1]
