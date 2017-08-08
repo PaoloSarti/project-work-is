@@ -10,12 +10,15 @@ from utils import normalizeColumns, print_cm, label_names, print_parameters, cla
 from training import fitValidate, predict_test
 import numpy as np
 import sys
+import getopt
 
 #---------------------------Parameters-------------------------------------
-files = ['233_day.csv', '239_day.csv', '243_day.csv', '258_day.csv', '259_day.csv', '268_day.csv', '279_day.csv', '305_day.csv', '334_day.csv', '344_day.csv']
-#'233_night.csv', '239_night.csv', '243_night.csv', '258_night.csv', '259_night.csv', '268_night.csv', '279_night.csv', '305_night.csv', '334_night.csv', '344_night.csv']
-basedir = '../crunched_data/normalized/'
-filenames = [basedir + f for f in files]
+filenames = ['233_day.csv', '239_day.csv', '243_day.csv', '258_day.csv', '259_day.csv', '268_day.csv', '279_day.csv', '305_day.csv', '334_day.csv', '344_day.csv',
+'233_night.csv', '239_night.csv', '243_night.csv', '258_night.csv', '259_night.csv', '268_night.csv', '279_night.csv', '305_night.csv', '334_night.csv', '344_night.csv']
+basedir = '../crunched_data/standardized/'
+specified_basedir = False 
+test_provided = False
+test_filenames = []
 learning_rate = 0.0001
 patience = 100
 n_hidden_layers = 3
@@ -24,15 +27,60 @@ resume = False
 neurons = 20
 pad_prev = True
 neurons = 2 * neurons if pad_prev else neurons #double the neuron count if the inputs are doubled
-compare_individuals = True
+compare_individuals = False
 cols = None #['SegmentStdDev', 'FreqAmplAvg', 'FreqAmplMaxFreq', 'SegmentLength', 'FreqAmplStdev', 'SegmentMax', 'SegmentMin', 'FreqAmplMin']
+cross_validate_individuals = False
+N = -1
+split = True
+
+try:
+    opts, args = getopt.getopt(sys.argv[1:], 'f:o:b:pcl:t:N:h')
+except getopt.GetoptError as err:
+    print(err)
+    sys.exit(2)
+for o, a in opts:
+    if o == '-f':
+        filenames = a.split(',')
+    if o == '-t':
+        test_provided = True
+        test_filenames = a.split(',')
+    if o == '-p':
+        pad_prev = True
+    if o == '-l':
+        filenames = lines_to_list(a)
+    if o == '-b':
+        specified_basedir = True
+        basedir = a
+    if o == '-N':
+        N = int(a)
+        split = False
+    if o == '-c':
+        cross_validate_individuals = True
+    elif o == '-h':
+        print('''USAGE: python simple_nn.py [-f <filenames>] [-t <filenames> | -l <filename> ] [-b <basedirectory>] [-c] [-N] [-p] [-h] 
+        -f: comma-separated file names to process (the basedirectory (-b) is added if indicated)
+        -b: specify the directory in which to find the specified files
+        -t: provide files for testing (the basedirectory (-b) is added if indicated)
+        -l: file that contains a list of filenames to load (overrides -f)
+        -p: pad the previous statistics also
+        -c: cross validate on the individuals from the filenames provided with -f or -l (ignores -t, -N)
+        -h: show this help and quit.
+        ''')
+        sys.exit()
+
+if specified_basedir:
+    filenames = [basedir + f for f in filenames]
+    test_filenames = [basedir + f for f in test_filenames]
 
 #------------------------- Load datasets----------------------------------
 if compare_individuals:
     (trainData,trainLabels), (validData, validLabels) = load_cols_train_test(filenames[:-1], pad_prev=pad_prev, cols=cols)
     (testData, testLabels) = load_cols(filenames[-1:], pad_prev=pad_prev, cols=cols)
-else:
+elif split:
     (trainData,trainLabels), (validData, validLabels), (testData, testLabels) = load_cols_train_valid_test(filenames, perc_train=0.5, perc_valid=0.2, pad_prev=pad_prev, cols=cols)
+elif N!=-1:
+    (trainData,trainLabels), (validData, validLabels) = load_cols_train_test(filenames[:N], pad_prev=pad_prev, cols=cols)
+    (testData, testLabels) = load_cols(filenames[N:], pad_prev=pad_prev, cols=cols)
 
 class_weights = class_weights_max(trainLabels)
 
@@ -64,7 +112,6 @@ def deep_model():
         model.add(BatchNormalization())
         model.add(Activation(activation))
     return model
-
 
 #------------------------Model------------------------------------------
 model = Sequential()
