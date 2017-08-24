@@ -11,8 +11,8 @@ from sklearn.model_selection import cross_val_score
 from fetchdata import load_cols_train_test, csv_attributes, load_cols
 from utils import print_cm, print_parameters, lines_to_list
 import pydotplus
-from functools import reduce
 import numpy as np
+from utils import cross_validation_datasets
 
 def print_results(train_results, test_results, labels):
     (train_acc, train_report, train_cm) = train_results
@@ -62,11 +62,6 @@ def decision_tree_classify(trainData, trainLabels, testData, testLabels, crit, m
     test_cm = confusion_matrix(testLabels,predicted)
 
     return classifier, (train_acc, train_report, train_cm), (test_acc, test_report, test_cm)
-
-def cross_validation_datasets(folds, test_idx):
-    train_folds = [folds[i] for i in range(len(folds)) if i != test_idx]
-    train_data, train_labels = reduce(lambda a,b: (a[0]+b[0], a[1]+b[1]), train_folds, ([],[])) #0->data, 1->labels
-    return (train_data, train_labels), (folds[test_idx][0], folds[test_idx][1])
 
 def main():
     #---------------------------Parameters-------------------------------------

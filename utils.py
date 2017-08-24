@@ -8,6 +8,7 @@ import json
 import math
 from matplotlib import pyplot as plt
 from scipy.signal import butter, lfilter
+from functools import reduce
 
 def aggregate(array, n=1, fn=st.mean):
     i = 0
@@ -74,6 +75,10 @@ def standardize(l):
     lp = np.array(l)
     return (l-np.mean(l))/np.std(l)
 
+def cross_validation_datasets(folds, test_idx):
+    train_folds = [folds[i] for i in range(len(folds)) if i != test_idx]
+    train_data, train_labels = reduce(lambda a,b: (a[0]+b[0], a[1]+b[1]), train_folds, ([],[])) #0->data, 1->labels
+    return (train_data, train_labels), (folds[test_idx][0], folds[test_idx][1])
 
 def normalizeColumns(data):
     npdata = np.array(data)
